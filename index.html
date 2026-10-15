@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard Exam Score: Regresi Linear Berganda</title>
+    <style>
+      /* =====================================================================
+   WALLPAPER: ganti foto di sini.
+   1) Taruh foto Anda di folder yang sama dengan index.html
+   2) Namai wallpaper.jpg (atau ubah nama file di bawah ini)
+   Belum ada foto? Latar gradien laut senja otomatis tampil.
+   Saran foto: lebar 1920px, ukuran di bawah 1 MB agar cepat dibuka.
+   ===================================================================== */
+      :root {
+        --wallpaper: url("wallpaper.jpg");
+      }
+      @font-face {
+        font-family: Monocraft;
+        src: url("fonts/Monocraft.woff2") format("woff2");
+        font-display: swap;
+      }
+      :root {
+        --font: Monocraft, ui-monospace, Menlo, monospace;
+        --ink: #0e1621;
+        --mute: #34424f;
+        --glass: rgba(255, 255, 255, 0.58);
+        --edge: rgba(255, 255, 255, 0.8);
+        --edge2: rgba(255, 255, 255, 0.3);
+        --spec: 0.3;
+        --scrim: rgba(255, 255, 255, 0.14);
+        --line: rgba(30, 45, 60, 0.18);
+        --shadow: rgba(10, 25, 45, 0.22);
+        --inset: rgba(255, 255, 255, 0.5);
+        --acc: #0a62c9;
+        --chip: #0a62c9;
+        --pos: #0b7a5e;
+        --neg: #c0264f;
+        --g1: #b35f00;
+        --ptstroke: rgba(255, 255, 255, 0.95);
+        --field: rgba(255, 255, 255, 0.62);
+        --track: rgba(20, 35, 55, 0.2);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f2f6fa;
+          --mute: #bcc8d4;
+          --glass: rgba(20, 27, 38, 0.55);
+          --edge: rgba(255, 255, 255, 0.3);
+          --edge2: rgba(255, 255, 255, 0.08);
+          --spec: 0.12;
+          --scrim: rgba(0, 0, 0, 0.3);
+          --line: rgba(255, 255, 255, 0.17);
+          --shadow: rgba(0, 0, 0, 0.5);
+          --inset: rgba(0, 0, 0, 0.28);
+          --acc: #7cbbff;
+          --chip: #1e6fd0;
+          --pos: #52d6b4;
+          --neg: #ff7fa2;
+          --g1: #ffb454;
+          --ptstroke: rgba(20, 26, 36, 0.95);
+          --field: rgba(255, 255, 255, 0.11);
+          --track: rgba(255, 255, 255, 0.2);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font: 14px/1.75 var(--font);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          linear-gradient(var(--scrim), var(--scrim)),
+          var(--wallpaper) center/cover no-repeat,
+          radial-gradient(60% 50% at 20% 18%, #3f8f8a 0, transparent 70%),
+          radial-gradient(50% 45% at 88% 28%, #d8a65f 0, transparent 70%),
+          radial-gradient(65% 60% at 60% 98%, #2f5278 0, transparent 70%),
+          #1d3342;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.3;
+        font-weight: 400;
+      }
+      .w {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 18px;
+      }
+      /* liquid glass: blur + saturasi, tepi terang, kilau tipis di sudut */
+      .panel,
+      section > h2,
+      section > .sub,
+      footer.w,
+      .hero {
+        background: var(--glass);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        backdrop-filter: blur(28px) saturate(180%);
+        border: 1px solid var(--edge);
+        border-radius: 26px;
+        box-shadow:
+          inset 0 1px 0 var(--edge),
+          inset 0 -1px 0 var(--edge2),
+          0 10px 36px var(--shadow);
+        position: relative;
+      }
+      .panel::before,
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, var(--spec)),
+          transparent 38%,
+          transparent 64%,
+          rgba(255, 255, 255, calc(var(--spec) * 0.4))
+        );
+      }
+      .panel > *,
+      .hero > * {
+        position: relative;
+      }
+      header {
+        padding: 28px 0 4px;
+      }
+      .hero {
+        padding: 30px 32px;
+      }
+      h1 {
+        font-size: clamp(22px, 5.4vw, 38px);
+        letter-spacing: -0.01em;
+      }
+      .lead {
+        color: var(--mute);
+        max-width: 62ch;
+        margin: 12px 0 18px;
+      }
+      .how {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+        gap: 10px;
+        margin: 0 0 20px;
+        padding: 0;
+        list-style: none;
+        counter-reset: s;
+      }
+      .how li {
+        counter-increment: s;
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 16px;
+        padding: 11px 14px 11px 48px;
+        position: relative;
+        font-size: 13px;
+      }
+      .how li::before {
+        content: counter(s);
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--chip);
+        color: #fff;
+        text-align: center;
+        line-height: 26px;
+        font-size: 13px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      nav a {
+        padding: 7px 16px;
+        border-radius: 999px;
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        color: var(--ink);
+        font-size: 13px;
+        text-decoration: none;
+        transition: background 0.2s;
+      }
+      nav a:hover {
+        background: var(--chip);
+        color: #fff;
+      }
+      section {
+        padding: 22px 0 6px;
+      }
+      section > h2 {
+        display: inline-block;
+        font-size: clamp(16px, 3.6vw, 21px);
+        padding: 10px 22px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        max-width: 100%;
+      }
+      section > .sub {
+        display: table;
+        padding: 11px 18px;
+        border-radius: 18px;
+      }
+      .sub {
+        color: var(--mute);
+        margin: 0;
+        max-width: 74ch;
+      }
+      .panel {
+        padding: 22px;
+        margin-top: 16px;
+      }
+      .panel h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+        gap: 0 16px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip,
+      .seg {
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 999px;
+        padding: 5px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+        position: relative;
+      }
+      .chip input,
+      .seg input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        cursor: pointer;
+      }
+      .chip:has(input:checked),
+      .seg:has(input:checked) {
+        background: var(--chip);
+        border-color: transparent;
+        color: #fff;
+      }
+      :is(.chip, .seg):has(input:focus-visible),
+      nav a:focus-visible,
+      select:focus-visible,
+      button:focus-visible,
+      input[type="range"]:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 3px;
+      }
+      .strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 26px;
+        margin: 16px 0 0;
+        font-size: 13px;
+        color: var(--mute);
+      }
+      .strip b {
+        color: var(--ink);
+        font-weight: 400;
+        font-size: 15px;
+      }
+      .sc {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        padding: 7px 11px;
+        text-align: right;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      th {
+        font-weight: 400;
+        color: var(--mute);
+      }
+      .mx td,
+      .mx th {
+        padding: 4px 7px;
+      }
+      .ns {
+        color: var(--mute);
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .tk {
+        font-size: 15px;
+        fill: var(--mute);
+      }
+      .ax {
+        font-size: 16px;
+        fill: var(--ink);
+      }
+      .gr {
+        stroke: var(--line);
+        stroke-width: 1;
+      }
+      .zero {
+        stroke: var(--mute);
+        stroke-width: 1.2;
+      }
+      .ln {
+        stroke: var(--neg);
+        stroke-width: 2.4;
+        stroke-linecap: round;
+      }
+      .ln.d {
+        stroke: var(--mute);
+        stroke-dasharray: 5 4;
+        stroke-width: 1.5;
+      }
+      .pt {
+        opacity: 0.82;
+        stroke: var(--ptstroke);
+        stroke-width: 1;
+      }
+      .pt:hover {
+        opacity: 1;
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+      .a,
+      .m {
+        fill: var(--acc);
+      }
+      .f {
+        fill: var(--g1);
+      }
+      .pos {
+        fill: var(--pos);
+      }
+      .neg {
+        fill: var(--neg);
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+      summary {
+        cursor: pointer;
+      }
+      details p {
+        margin: 8px 0;
+        color: var(--mute);
+        max-width: 80ch;
+        font-size: 13px;
+      }
+      code {
+        background: var(--field);
+        padding: 2px 7px;
+        border-radius: 6px;
+      }
+      .eq {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 8px 0;
+        font-size: 12px;
+      }
+      .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: end;
+        margin-bottom: 14px;
+      }
+      .ctl label {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        color: var(--mute);
+        gap: 5px;
+      }
+      select,
+      button {
+        font: inherit;
+        font-size: 13px;
+        padding: 8px 14px;
+        border: 1px solid var(--edge2);
+        border-radius: 12px;
+        background: var(--field);
+        color: var(--ink);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        max-width: 100%;
+      }
+      select option {
+        color: #111;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: var(--chip);
+        color: #fff;
+      }
+      .ctl .ck {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+        font-size: 13px;
+      }
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--chip);
+      }
+      .hm {
+        display: grid;
+        grid-template-columns: 104px repeat(8, minmax(46px, 1fr));
+        gap: 3px;
+        font-size: 11px;
+        min-width: 560px;
+      }
+      .hm div {
+        padding: 8px 1px;
+        text-align: center;
+        border-radius: 8px;
+      }
+      .hm .l {
+        text-align: right;
+        color: var(--mute);
+        padding-right: 6px;
+      }
+      .hm .h {
+        color: var(--mute);
+        font-size: 9.5px;
+        overflow: hidden;
+      }
+      .hm .c {
+        cursor: pointer;
+      }
+      .hm .c:hover {
+        outline: 2px solid var(--ink);
+      }
+      .leg {
+        font-size: 12px;
+        color: var(--mute);
+        display: flex;
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .leg i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      #tip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(15, 20, 28, 0.88);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        display: none;
+        z-index: 9;
+        max-width: 260px;
+      }
+      ul.r {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      ul.r li {
+        margin: 8px 0;
+      }
+      footer.w {
+        margin: 26px auto 40px;
+        width: calc(100% - 36px);
+        padding: 14px 20px;
+        border-radius: 20px;
+        color: var(--mute);
+        font-size: 12px;
+      }
+      /* simulasi */
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 10px;
+        margin-bottom: 14px;
+        align-items: baseline;
+      }
+      .row label {
+        font-size: 13px;
+      }
+      .row small {
+        color: var(--mute);
+        font-size: 11px;
+        display: block;
+      }
+      .row output,
+      #ot {
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 999px;
+        padding: 1px 12px;
+        min-width: 56px;
+        text-align: center;
+        font-size: 13px;
+      }
+      .row input {
+        grid-column: 1/-1;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 28px;
+        background: transparent;
+        margin: 2px 0;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--track);
+      }
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--track);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 26px;
+        height: 26px;
+        margin-top: -10px;
+        border: 0;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 26px;
+        height: 26px;
+        border: 0;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      .seg2 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 4px 0 16px;
+      }
+      .pre {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .xpbox {
+        background: var(--inset);
+        border: 1px solid var(--edge2);
+        border-radius: 20px;
+        padding: 20px 16px;
+        text-align: center;
+      }
+      .lvl span {
+        display: block;
+        font-size: clamp(40px, 11vw, 60px);
+        line-height: 1.1;
+      }
+      .lvl small {
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .xp {
+        display: flex;
+        gap: 4px;
+        margin: 16px 0 12px;
+      }
+      .xp i {
+        flex: 1;
+        height: 12px;
+        border-radius: 6px;
+        background: var(--track);
+        display: block;
+        overflow: hidden;
+      }
+      .xp b {
+        display: block;
+        height: 100%;
+        background: var(--acc);
+        border-radius: 6px;
+      }
+      .big {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      .big strong {
+        font-weight: 400;
+        color: var(--acc);
+        font-size: clamp(24px, 6vw, 32px);
+        margin-left: 8px;
+      }
+      #verdict {
+        margin: 6px 0 0;
+      }
+      .thr {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 18px 0 4px;
+        font-size: 13px;
+        align-items: center;
+      }
+      .cl {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .cl li {
+        display: grid;
+        grid-template-columns: minmax(82px, 1fr) 2fr 52px;
+        gap: 8px;
+        align-items: center;
+        margin: 9px 0;
+        font-size: 12px;
+      }
+      .cl em {
+        font-style: normal;
+        text-align: right;
+      }
+      .tr {
+        height: 10px;
+        background: var(--track);
+        border-radius: 99px;
+        position: relative;
+        overflow: hidden;
+      }
+      .tr::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--mute);
+      }
+      .tr i {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+      }
+      .tr .up {
+        left: 50%;
+        background: var(--pos);
+        border-radius: 0 99px 99px 0;
+      }
+      .tr .dn {
+        right: 50%;
+        background: var(--neg);
+        border-radius: 99px 0 0 99px;
+      }
+      .note {
+        font-size: 12px;
+        color: var(--mute);
+        margin: 10px 0 0;
+      }
+      @supports not (
+        (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+      ) {
+        :root {
+          --glass: rgba(245, 248, 252, 0.94);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --glass: rgba(24, 32, 44, 0.94);
+          }
+        }
+      }
+      @media (prefers-reduced-transparency: reduce) {
+        :root {
+          --glass: rgba(245, 248, 252, 0.97);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --glass: rgba(24, 32, 44, 0.97);
+          }
+        }
+      }
+      @media (max-width: 520px) {
+        .hero {
+          padding: 22px 20px;
+        }
+        .panel {
+          padding: 18px;
+        }
+        .hm {
+          min-width: 520px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="w">
+      <div class="hero">
+        <h1>Apa yang bikin nilai ujian naik atau turun?</h1>
+        <p class="lead">
+          Dashboard ini membaca pola dari data 100 mahasiswa (latihan1). Anda
+          tidak perlu paham statistik: cukup geser slider, lihat hasilnya.
+        </p>
+        <ol class="how">
+          <li>Geser slider kebiasaan di bagian Simulasi</li>
+          <li>Lihat peluang lolos berubah langsung</li>
+          <li>Buka bagian bawah untuk melihat alasannya</li>
+        </ol>
+        <nav>
+          <a href="#simulasi">Simulasi lolos</a
+          ><a href="#regresi">Faktor penentu</a
+          ><a href="#eksplor">Jelajah data</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="w">
+      <section id="simulasi">
+        <h2>Simulasi: peluang lolos</h2>
+        <p class="sub">
+          Atur kebiasaan seorang mahasiswa, lalu lihat perkiraan nilai dan
+          peluang lolosnya. Data tidak punya kolom lulus atau tidak, jadi nilai
+          minimal lolos bisa Anda tentukan sendiri.
+        </p>
+        <div class="g2">
+          <div class="panel">
+            <h3>1. Atur kebiasaan</h3>
+            <div id="sl"></div>
+            <div class="seg2">
+              <label class="seg"
+                ><input type="radio" name="gd" id="gF" checked />Perempuan
+                (F)</label
+              ><label class="seg"
+                ><input type="radio" name="gd" id="gM" />Laki-laki (M)</label
+              >
+            </div>
+            <div class="pre">
+              <button type="button" id="pa">Mahasiswa rata-rata</button
+              ><button type="button" id="pb">Contoh nilai tertinggi</button
+              ><button type="button" id="pw">Contoh nilai terendah</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>2. Hasil perkiraan</h3>
+            <div class="xpbox">
+              <div class="lvl">
+                <span id="score">0</span
+                ><small>perkiraan nilai ujian (maks 100)</small>
+              </div>
+              <div class="xp" id="xp"></div>
+              <p class="big">Peluang lolos<strong id="pct">0%</strong></p>
+              <p id="verdict"></p>
+            </div>
+            <label class="thr" for="thr"
+              >Nilai minimal untuk lolos <output id="ot">70</output></label
+            ><input
+              type="range"
+              id="thr"
+              min="50"
+              max="90"
+              step="1"
+              value="70"
+            />
+            <h3 style="margin-top: 20px">
+              Faktor mana yang mengangkat atau menurunkan?
+            </h3>
+            <ul class="cl" id="contrib"></ul>
+            <p class="note">
+              Hijau menambah nilai, merah mengurangi, dibandingkan mahasiswa
+              rata-rata (nilai <span id="avg"></span>). Satuannya poin nilai.
+            </p>
+            <details>
+              <summary>Bagaimana peluang ini dihitung?</summary>
+              <p>
+                Model regresi menebak nilai ujian dari semua faktor sekaligus.
+                Tebakan itu rata-rata meleset sekitar
+                <span id="sd"></span> poin, jadi peluang lolos adalah
+                kemungkinan nilai sebenarnya sama dengan atau di atas batas
+                lolos (kurva lonceng).
+              </p>
+              <p>
+                Catatan: faktor di data ini saling berkaitan kuat. Mahasiswa
+                yang rajin biasanya juga jarang bermain layar dan sering hadir.
+                Menggeser satu slider saja berarti faktor lain dianggap tetap,
+                kondisi yang jarang terjadi di dunia nyata. Pakai tombol contoh
+                untuk kombinasi yang lebih realistis. Ini perkiraan statistik,
+                bukan jaminan.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section id="regresi">
+        <h2>Faktor penentu nilai</h2>
+        <p class="sub">
+          Metode: regresi linear berganda, dengan Exam_Score sebagai hasil yang
+          dijelaskan. Centang atau cabut faktor untuk melihat hitungannya
+          berubah.
+        </p>
+        <div class="panel">
+          <h3>Faktor yang ikut dihitung</h3>
+          <div class="chips" id="chips"></div>
+          <div class="strip" id="kpi"></div>
+        </div>
+
+        <div class="g2">
+          <div class="panel">
+            <h3>Pengaruh relatif tiap variabel (beta standar)</h3>
+            <div id="bars"></div>
+            <p class="sub" style="font-size: 13px">
+              Hijau menaikkan nilai, merah menurunkan. Tanda * artinya
+              pengaruhnya belum meyakinkan secara statistik (p di atas 0.05),
+              jadi batangnya dipudarkan.
+            </p>
+          </div>
+          <div class="panel">
+            <h3>Artinya apa?</h3>
+            <ul class="r" id="read"></ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Tabel koefisien</h3>
+          <div class="sc" id="coef"></div>
+        </div>
+
+        <div class="g2">
+          <div class="panel">
+            <h3>Nilai aktual vs prediksi</h3>
+            <div id="avp"></div>
+          </div>
+          <div class="panel">
+            <h3>Sisaan (residual) vs prediksi</h3>
+            <div id="rvf"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Behind the scenes: cara angkanya dihitung</h3>
+          <p class="sub">
+            Semua langkah di bawah memakai model yang sedang dipilih di atas.
+            Gender diubah jadi angka (M = 1, F = 0).
+          </p>
+          <div id="steps"></div>
+        </div>
+      </section>
+
+      <section id="eksplor">
+        <h2>Jelajah data</h2>
+        <p class="sub">
+          Pilih sumbu, arahkan kursor ke titik untuk melihat siswa-nya. Klik
+          kotak di peta korelasi untuk langsung memakai pasangan variabel itu.
+        </p>
+        <div class="panel">
+          <div class="ctl">
+            <label>Sumbu X<select id="sx"></select></label>
+            <label>Sumbu Y<select id="sy"></select></label>
+            <button id="sw" type="button">Tukar X dan Y</button>
+            <label class="ck"
+              ><input type="checkbox" id="cg" /> Warnai per gender</label
+            >
+            <label class="ck"
+              ><input type="checkbox" id="cl" checked /> Garis regresi</label
+            >
+          </div>
+          <div class="g2" style="align-items: center">
+            <div>
+              <div id="sp"></div>
+              <div class="leg" id="lg"></div>
+            </div>
+            <div id="es"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Peta korelasi</h3>
+          <div class="sc"><div class="hm" id="hm"></div></div>
+        </div>
+      </section>
+    </main>
+    <footer class="w">
+      Data: latihan1.csv. Dihitung dengan JavaScript murni, tanpa library. Font:
+      Monocraft oleh Idrees Hassan (SIL Open Font License).
+    </footer>
+    <div id="tip"></div>
+
+    <script>
+      const RAW = `Student_ID,Gender,Age,Study_Hours,Sleep_Hours,Attendance,Exam_Score,Monthly_Spending,Screen_Hours,Satisfaction
+1,F,19,12,7.5,92,78,850,5.2,8
+2,M,20,8,6,85,68,1200,7.1,6
+3,F,18,15,8,96,88,700,4,9
+4,M,21,6,5.5,78,59,1500,8.5,5
+5,F,20,11,7,90,75,950,5.8,7
+6,M,19,14,7.5,94,84,800,4.9,8
+7,F,22,5,6,76,55,1800,9,4
+8,M,20,10,6.5,88,72,1100,6.4,7
+9,F,19,16,8,98,92,650,3.8,10
+10,M,21,7,5,81,62,1400,8.2,5
+11,F,20,13,7.5,93,80,900,5,8
+12,M,18,9,6.5,87,70,1000,6.8,7
+13,F,21,12,7,91,79,1050,5.5,8
+14,M,22,5,5.5,74,51,1900,9.4,4
+15,F,19,14,8,97,89,750,4.2,9
+16,M,20,8,6,84,65,1300,7.5,6
+17,F,18,17,8.5,99,95,600,3.2,10
+18,M,21,6,5,79,57,1600,8.8,5
+19,F,20,11,7,89,76,1000,6,7
+20,M,19,13,7.5,91,82,900,5.1,8
+21,F,22,7,6,82,64,1550,8,6
+22,M,20,10,6.5,86,71,1150,6.7,7
+23,F,19,15,8,95,87,700,4.1,9
+24,M,21,8,5.5,83,63,1350,7.8,6
+25,F,20,12,7.5,94,81,850,5.3,8
+26,M,18,9,6,88,69,1050,7,7
+27,F,21,14,8,96,86,800,4.5,9
+28,M,22,5,5,72,49,2000,9.6,3
+29,F,19,13,7,91,77,950,5.7,8
+30,M,20,7,6,80,60,1450,8.1,5
+31,F,18,16,8.5,98,93,650,3.5,10
+32,M,21,10,6.5,87,73,1200,6.9,7
+33,F,20,11,7.5,92,79,900,5.4,8
+34,M,19,6,5.5,77,56,1650,8.7,5
+35,F,22,15,8,97,91,750,4,9
+36,M,20,9,6,85,67,1250,7.3,6
+37,F,19,12,7,90,78,1000,5.9,8
+38,M,21,7,5.5,81,61,1500,8.4,5
+39,F,18,17,8.5,99,96,600,3,10
+40,M,20,8,6.5,86,70,1100,6.5,7
+41,F,21,13,7.5,93,83,850,5,8
+42,M,22,5,5,75,52,1850,9.2,4
+43,F,19,14,8,96,88,700,4.3,9
+44,M,20,10,6,84,66,1300,7.6,6
+45,F,18,15,8.5,98,94,650,3.4,10
+46,M,21,6,5.5,79,58,1550,8.9,5
+47,F,20,11,7,90,74,950,5.6,7
+48,M,19,13,7.5,92,81,900,5.2,8
+49,F,22,7,6,83,63,1600,8.3,6
+50,M,20,9,6.5,87,72,1150,6.6,7
+51,F,19,16,8,97,90,700,3.9,9
+52,M,21,8,5.5,82,64,1400,7.9,6
+53,F,20,12,7.5,93,80,850,5.1,8
+54,M,18,10,6,86,68,1050,7.2,7
+55,F,21,14,8,95,87,800,4.6,9
+56,M,22,5,5,73,50,1950,9.5,4
+57,F,19,13,7,91,76,950,5.8,8
+58,M,20,7,6,81,61,1450,8,5
+59,F,18,17,8.5,99,95,600,3.1,10
+60,M,21,9,6.5,88,71,1200,6.8,7
+61,F,20,11,7.5,92,79,900,5.3,8
+62,M,19,6,5.5,78,57,1600,8.6,5
+63,F,22,15,8,97,92,750,4.1,9
+64,M,20,10,6,85,67,1250,7.4,6
+65,F,19,14,7.5,94,85,800,4.7,9
+66,M,21,7,5,80,60,1500,8.5,5
+67,F,18,16,8.5,98,93,650,3.6,10
+68,M,20,8,6.5,86,69,1100,6.9,7
+69,F,21,12,7,91,78,1000,5.5,8
+70,M,22,5,5.5,74,53,1800,9.1,4
+71,F,19,13,8,95,86,750,4.4,9
+72,M,20,9,6,84,65,1300,7.7,6
+73,F,18,17,8.5,99,96,600,3.3,10
+74,M,21,6,5.5,79,58,1550,8.8,5
+75,F,20,11,7,90,75,950,5.9,7
+76,M,19,14,7.5,93,83,850,5,8
+77,F,22,7,6,82,64,1600,8.2,6
+78,M,20,10,6.5,87,72,1150,6.7,7
+79,F,19,15,8,97,89,700,4,9
+80,M,21,8,5.5,83,63,1350,7.9,6
+81,F,20,12,7.5,94,82,850,5.2,8
+82,M,18,9,6,87,69,1050,7.1,7
+83,F,21,14,8,96,88,800,4.5,9
+84,M,22,5,5,72,48,2000,9.7,3
+85,F,19,13,7,91,77,950,5.6,8
+86,M,20,7,6,80,59,1450,8.3,5
+87,F,18,16,8.5,98,94,650,3.4,10
+88,M,21,10,6.5,88,73,1200,6.8,7
+89,F,20,11,7.5,93,80,900,5.4,8
+90,M,19,6,5.5,77,55,1650,8.9,5
+91,F,22,15,8,97,91,750,4.2,9
+92,M,20,9,6,85,66,1250,7.5,6
+93,F,19,14,7.5,95,86,800,4.8,9
+94,M,21,7,5,79,60,1500,8.4,5
+95,F,18,17,8.5,99,95,600,3.2,10
+96,M,20,8,6.5,86,68,1100,6.6,7
+97,F,21,12,7,92,79,1000,5.7,8
+98,M,22,5,5.5,73,51,1900,9.3,4
+99,F,19,13,8,96,87,750,4.3,9
+100,M,20,10,6,84,65,1300,7.8,6`;
+      const $ = (s) => document.querySelector(s);
+      const rows = RAW.trim()
+        .split("\n")
+        .map((r) => r.trim().split(","));
+      const HD = rows.shift();
+      const col = {};
+      HD.forEach(
+        (h, i) =>
+          (col[h] = rows.map((r) =>
+            h === "Gender" ? +(r[i] === "M") : +r[i],
+          )),
+      );
+      const N = rows.length,
+        Y = "Exam_Score";
+      const XV = [
+        "Age",
+        "Study_Hours",
+        "Sleep_Hours",
+        "Attendance",
+        "Monthly_Spending",
+        "Screen_Hours",
+        "Satisfaction",
+        "Gender",
+      ];
+      const DESC = {
+        Age: "Umur",
+        Study_Hours: "Jam belajar",
+        Sleep_Hours: "Jam tidur",
+        Attendance: "Kehadiran",
+        Monthly_Spending: "Pengeluaran",
+        Screen_Hours: "Jam layar",
+        Satisfaction: "Kepuasan",
+        Gender: "Gender (M)",
+        Exam_Score: "Nilai ujian",
+      };
+      const NUM = [...XV.slice(0, 7), Y];
+      /* ---------- statistik dasar ---------- */
+      const sum = (a) => a.reduce((s, v) => s + v, 0),
+        mean = (a) => sum(a) / a.length,
+        sd = (a) => {
+          const m = mean(a);
+          return Math.sqrt(sum(a.map((v) => (v - m) ** 2)) / (a.length - 1));
+        };
+      const corr = (a, b) => {
+        const ma = mean(a),
+          mb = mean(b);
+        return (
+          sum(a.map((v, i) => (v - ma) * (b[i] - mb))) /
+          Math.sqrt(
+            sum(a.map((v) => (v - ma) ** 2)) * sum(b.map((v) => (v - mb) ** 2)),
+          )
+        );
+      };
+      /* ---------- aljabar matriks ---------- */
+      const T = (A) => A[0].map((_, j) => A.map((r) => r[j]));
+      const mm = (A, B) =>
+        A.map((r) =>
+          B[0].map((_, j) => r.reduce((s, v, k) => s + v * B[k][j], 0)),
+        );
+      function inv(M) {
+        const n = M.length,
+          A = M.map((r, i) => [
+            ...r,
+            ...Array.from({ length: n }, (_, j) => +(i == j)),
+          ]);
+        for (let i = 0; i < n; i++) {
+          let p = i;
+          for (let r = i + 1; r < n; r++)
+            if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+          [A[i], A[p]] = [A[p], A[i]];
+          const d = A[i][i];
+          for (let j = 0; j < 2 * n; j++) A[i][j] /= d;
+          for (let r = 0; r < n; r++)
+            if (r != i) {
+              const f = A[r][i];
+              for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[i][j];
+            }
+        }
+        return A.map((r) => r.slice(n));
+      }
+      /* ---------- distribusi t dan F (beta tak-lengkap) ---------- */
+      function lg(x) {
+        const c = [
+          76.18009172947146, -86.50532032941677, 24.01409824083091,
+          -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
+        ];
+        let y = x,
+          t = x + 5.5;
+        t -= (x + 0.5) * Math.log(t);
+        let s = 1.000000000190015;
+        for (const q of c) s += q / ++y;
+        return -t + Math.log((2.5066282746310005 * s) / x);
+      }
+      function bc(x, a, b) {
+        const tn = 1e-30,
+          qab = a + b,
+          qap = a + 1,
+          qam = a - 1;
+        let c = 1,
+          d = 1 - (qab * x) / qap;
+        if (Math.abs(d) < tn) d = tn;
+        d = 1 / d;
+        let h = d;
+        for (let m = 1; m < 300; m++) {
+          const m2 = 2 * m;
+          let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+          d = 1 + aa * d;
+          if (Math.abs(d) < tn) d = tn;
+          c = 1 + aa / c;
+          if (Math.abs(c) < tn) c = tn;
+          d = 1 / d;
+          h *= d * c;
+          aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+          d = 1 + aa * d;
+          if (Math.abs(d) < tn) d = tn;
+          c = 1 + aa / c;
+          if (Math.abs(c) < tn) c = tn;
+          d = 1 / d;
+          const e = d * c;
+          h *= e;
+          if (Math.abs(e - 1) < 3e-10) break;
+        }
+        return h;
+      }
+      function ib(x, a, b) {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        const bt = Math.exp(
+          lg(a + b) - lg(a) - lg(b) + a * Math.log(x) + b * Math.log(1 - x),
+        );
+        return x < (a + 1) / (a + b + 2)
+          ? (bt * bc(x, a, b)) / a
+          : 1 - (bt * bc(1 - x, b, a)) / b;
+      }
+      const pT = (t, df) => ib(df / (df + t * t), df / 2, 0.5),
+        pF = (F, d1, d2) => ib(d2 / (d2 + d1 * F), d2 / 2, d1 / 2);
+      /* ---------- OLS: b = (X'X)^-1 X'y ---------- */
+      function ols(yn, vs) {
+        const k = vs.length + 1,
+          df = N - k,
+          yv = col[yn];
+        const X = yv.map((_, i) => [1, ...vs.map((v) => col[v][i])]),
+          y = yv.map((v) => [v]);
+        const Xt = T(X),
+          XtX = mm(Xt, X),
+          Xty = mm(Xt, y),
+          I = inv(XtX),
+          b = mm(I, Xty).map((r) => r[0]);
+        const yh = X.map((r) => sum(r.map((v, j) => v * b[j]))),
+          res = yv.map((v, i) => v - yh[i]);
+        const ym = mean(yv),
+          sse = sum(res.map((e) => e * e)),
+          sst = sum(yv.map((v) => (v - ym) ** 2)),
+          ssr = sst - sse,
+          mse = sse / df;
+        const se = I.map((r, i) => Math.sqrt(mse * r[i])),
+          t = b.map((v, i) => v / se[i]),
+          p = t.map((v) => pT(v, df));
+        const r2 = ssr / sst,
+          F = ssr / (k - 1) / mse;
+        return {
+          vs,
+          k,
+          df,
+          X,
+          y,
+          XtX,
+          Xty,
+          I,
+          b,
+          yh,
+          res,
+          sse,
+          sst,
+          ssr,
+          mse,
+          se,
+          t,
+          p,
+          r2,
+          adj: 1 - ((1 - r2) * (N - 1)) / df,
+          F,
+          pF: pF(F, k - 1, df),
+          beta: vs.map((v, i) => (b[i + 1] * sd(col[v])) / sd(yv)),
+        };
+      }
+      //UI
+      const f = (v, d = 3) =>
+        Math.abs(v) >= 1e5 || (v !== 0 && Math.abs(v) < 1e-3)
+          ? v.toExponential(2)
+          : v.toFixed(d);
+      const fp = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
+      function ticks(lo, hi, n = 5) {
+        const s = (hi - lo || 1) / n,
+          m = 10 ** Math.floor(Math.log10(s)),
+          q = s / m,
+          st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * m,
+          r = [];
+        for (let v = Math.floor(lo / st) * st; v <= hi + st * 0.5; v += st)
+          r.push(+v.toFixed(10));
+        return r;
+      }
+      const tl = (v) => String(+v.toFixed(3));
+      function scatter(o) {
+        const W = 560,
+          H = 340,
+          L = 56,
+          R = 14,
+          Tp = 14,
+          B = 44,
+          tx = ticks(Math.min(...o.xs), Math.max(...o.xs)),
+          ty = ticks(Math.min(...o.ys), Math.max(...o.ys)),
+          x0 = tx[0],
+          x1 = tx.at(-1),
+          y0 = ty[0],
+          y1 = ty.at(-1);
+        const X = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R),
+          Y = (v) => H - B - ((v - y0) / (y1 - y0 || 1)) * (H - B - Tp);
+        let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.yl} terhadap ${o.xl}"><clipPath id="${o.id}"><rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - B - Tp}"/></clipPath>`;
+        ty.forEach(
+          (v) =>
+            (s += `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tk" x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${tl(v)}</text>`),
+        );
+        tx.forEach(
+          (v) =>
+            (s += `<text class="tk" x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${tl(v)}</text>`),
+        );
+        s += `<text class="ax" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">${o.xl}</text><text class="ax" transform="translate(13 ${(Tp + H - B) / 2}) rotate(-90)" text-anchor="middle">${o.yl}</text><g clip-path="url(#${o.id})">`;
+        (o.lines || []).forEach(
+          (l) =>
+            (s += `<line class="${l[4]}" x1="${X(l[0])}" y1="${Y(l[1])}" x2="${X(l[2])}" y2="${Y(l[3])}"/>`),
+        );
+        o.xs.forEach(
+          (v, i) =>
+            (s += `<circle class="pt ${o.cls ? o.cls[i] : "a"}" cx="${X(v)}" cy="${Y(o.ys[i])}" r="5" data-t="${o.tips[i]}"/>`),
+        );
+        return s + "</g></svg>";
+      }
+      const tbl = (M, rl, cl, d = 2) =>
+        `<div class="sc"><table class="mx"><tr><th></th>${cl.map((c) => `<th>${c}</th>`).join("")}</tr>${M.map((r, i) => `<tr><th style="text-align:left">${rl[i]}</th>${r.map((v) => `<td>${f(v, d)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+      /* ---------- bagian 1: regresi ---------- */
+      let sel = new Set(XV);
+      $("#chips").innerHTML = XV.map(
+        (k) =>
+          `<label class="chip" title="${k}"><input type="checkbox" value="${k}" checked>${DESC[k]}</label>`,
+      ).join("");
+      $("#chips").onchange = (e) => {
+        const k = e.target.value;
+        if (e.target.checked) sel.add(k);
+        else if (sel.size > 1) sel.delete(k);
+        else e.target.checked = true;
+        model();
+      };
+      function model() {
+        const vs = XV.filter((k) => sel.has(k)),
+          m = ols(Y, vs),
+          nm = ["Intersep", ...vs];
+        const vif = vs.map((v) =>
+          vs.length < 2
+            ? 1
+            : 1 /
+              (1 -
+                ols(
+                  v,
+                  vs.filter((u) => u !== v),
+                ).r2),
+        );
+        $("#kpi").innerHTML =
+          `<span>R² <b>${m.r2.toFixed(4)}</b></span><span>Adj. R² <b>${m.adj.toFixed(4)}</b></span><span>F <b>${m.F.toFixed(1)}</b> (p ${fp(m.pF)})</span><span>RMSE <b>${Math.sqrt(m.sse / N).toFixed(2)}</b> poin</span><span>n <b>${N}</b>, df sisaan <b>${m.df}</b></span>`;
+        /* batang beta */
+        const it = vs
+            .map((v, i) => ({ v, b: m.beta[i], p: m.p[i + 1] }))
+            .sort((a, b) => Math.abs(b.b) - Math.abs(a.b)),
+          W = 560,
+          rh = 30,
+          Lb = 150,
+          mid = Lb + (W - Lb - 20) / 2,
+          mx = Math.max(...it.map((i) => Math.abs(i.b)), 0.05),
+          sc = ((W - Lb - 20) / 2 / mx) * 0.72;
+        let s = `<svg viewBox="0 0 ${W} ${it.length * rh + 12}" role="img" aria-label="Beta standar"><line class="zero" x1="${mid}" x2="${mid}" y1="2" y2="${it.length * rh + 8}"/>`;
+        it.forEach((o, i) => {
+          const y = 6 + i * rh,
+            w = Math.abs(o.b) * sc,
+            pos = o.b >= 0;
+          s += `<text class="ax" x="${Lb - 8}" y="${y + 19}" text-anchor="end">${DESC[o.v]}</text><rect x="${pos ? mid : mid - w}" y="${y + 5}" width="${w}" height="18" rx="4" class="${pos ? "pos" : "neg"}" opacity="${o.p < 0.05 ? 1 : 0.35}"/><text class="tk" x="${pos ? mid + w + 5 : mid - w - 5}" y="${y + 19}" text-anchor="${pos ? "start" : "end"}">${o.b.toFixed(2)}${o.p < 0.05 ? "" : "*"}</text>`;
+        });
+        $("#bars").innerHTML = s + "</svg>";
+        /* pembacaan */
+        const sig = it.filter((o) => o.p < 0.05),
+          ns = it.filter((o) => o.p >= 0.05),
+          mv = Math.max(...vif);
+        $("#read").innerHTML =
+          `<li>Model menjelaskan <b>${(m.r2 * 100).toFixed(1)}%</b> variasi Exam_Score.</li>` +
+          (sig.length
+            ? `<li>Signifikan (p &lt; 0.05, variabel lain dikontrol): ${sig.map((o) => `<b>${DESC[o.v]}</b> (${o.b > 0 ? "naik" : "turun"})`).join(", ")}.</li>`
+            : "") +
+          (ns.length
+            ? `<li>Tidak signifikan: ${ns.map((o) => DESC[o.v]).join(", ")}.</li>`
+            : "") +
+          `<li>Pengaruh relatif terbesar: <b>${DESC[it[0].v]}</b> (beta ${it[0].b.toFixed(2)}).</li>` +
+          (mv > 10
+            ? `<li><b>Waspada multikolinearitas.</b> VIF tertinggi ${mv.toFixed(0)} (batas umum 10). Variabel X saling berkorelasi sangat kuat, jadi koefisien tiap variabel kurang stabil. Coba cabut beberapa variabel untuk melihat perubahannya.</li>`
+            : `<li>VIF tertinggi ${mv.toFixed(1)}, multikolinearitas masih aman.</li>`) +
+          `<li>Ini hubungan statistik pada data observasi, bukan bukti sebab-akibat.</li>`;
+        /* tabel koefisien */
+        $("#coef").innerHTML =
+          `<table><tr><th>Variabel</th><th>Koefisien b</th><th>Std. error</th><th>t</th><th>p-value</th><th>Beta standar</th><th>VIF</th></tr>` +
+          nm
+            .map(
+              (n, i) =>
+                `<tr class="${m.p[i] < 0.05 ? "" : "ns"}"><td>${n}</td><td>${f(m.b[i], 4)}</td><td>${f(m.se[i], 4)}</td><td>${m.t[i].toFixed(2)}</td><td>${fp(m.p[i])}</td><td>${i ? m.beta[i - 1].toFixed(3) : "-"}</td><td>${i ? vif[i - 1].toFixed(1) : "-"}</td></tr>`,
+            )
+            .join("") +
+          "</table>";
+        /* diagnostik */
+        const tips = col.Student_ID.map(
+          (id, i) =>
+            `Siswa ${id}: aktual ${col[Y][i]}, prediksi ${m.yh[i].toFixed(1)}`,
+        );
+        const mn = Math.min(...col[Y], ...m.yh),
+          mxv = Math.max(...col[Y], ...m.yh);
+        $("#avp").innerHTML = scatter({
+          id: "c1",
+          xs: m.yh,
+          ys: col[Y],
+          xl: "Prediksi",
+          yl: "Exam_Score aktual",
+          tips,
+          lines: [[mn, mn, mxv, mxv, "ln d"]],
+        });
+        const xr = Math.min(...m.yh),
+          xR = Math.max(...m.yh);
+        $("#rvf").innerHTML = scatter({
+          id: "c2",
+          xs: m.yh,
+          ys: m.res,
+          xl: "Prediksi",
+          yl: "Residual",
+          tips: tips.map((t, i) => t + `, residual ${m.res[i].toFixed(2)}`),
+          lines: [[xr, 0, xR, 0, "ln d"]],
+        });
+        /* langkah-langkah */
+        const k = m.k,
+          sh = nm.map((n) => (n.length > 8 ? n.slice(0, 7) + "." : n)),
+          eq =
+            "Exam_Score = " +
+            f(m.b[0], 3) +
+            vs
+              .map(
+                (v, i) =>
+                  (m.b[i + 1] < 0 ? " - " : " + ") +
+                  f(Math.abs(m.b[i + 1]), 4) +
+                  " × " +
+                  v,
+              )
+              .join("");
+        const pre = m.X.slice(0, 5);
+        $("#steps").innerHTML =
+          `<details open><summary>Langkah 1. Susun matriks X dan vektor y</summary><p>Setiap baris adalah satu siswa. Kolom pertama bernilai 1 untuk intersep. Di bawah hanya 5 dari ${N} baris pertama; ukuran penuh X adalah ${N} × ${k}.</p>${tbl(
+            pre,
+            [1, 2, 3, 4, 5].map((i) => "Siswa " + i),
+            nm,
+            1,
+          )}<p>Vektor y (Exam_Score) untuk 5 baris itu: ${col[Y].slice(0, 5).join(", ")}, ...</p></details>` +
+          `<details><summary>Langkah 2. Hitung XᵀX (${k} × ${k})</summary><p>Mengalikan transpose X dengan X merangkum jumlah kuadrat dan jumlah perkalian antar variabel.</p>${tbl(m.XtX, nm, sh, 1)}</details>` +
+          `<details><summary>Langkah 3. Hitung Xᵀy (${k} × 1)</summary><p>Jumlah perkalian tiap variabel X dengan Exam_Score.</p>${tbl(m.Xty, nm, ["Xᵀy"], 1)}</details>` +
+          `<details><summary>Langkah 4. Invers matriks (XᵀX)⁻¹</summary><p>Dihitung dengan eliminasi Gauss-Jordan. Diagonalnya dipakai untuk standard error, sehingga angka besar di sini berarti koefisien tersebut tidak stabil.</p>${tbl(m.I, nm, sh, 5)}</details>` +
+          `<details><summary>Langkah 5. Koefisien b = (XᵀX)⁻¹ Xᵀy</summary><p>Hasil perkalian invers dengan Xᵀy adalah koefisien regresi.</p>${tbl(
+            m.b.map((v) => [v]),
+            nm,
+            ["b"],
+            4,
+          )}<div class="eq"><code>${eq}</code></div></details>` +
+          `<details><summary>Langkah 6. Jumlah kuadrat dan R²</summary><p>Prediksi ŷ = Xb, residual e = y − ŷ.</p>${tbl([[m.sst, m.ssr, m.sse]], ["Nilai"], ["SST (total)", "SSR (dijelaskan)", "SSE (sisaan)"], 2)}<p>R² = SSR / SST = ${m.ssr.toFixed(2)} / ${m.sst.toFixed(2)} = <b>${m.r2.toFixed(4)}</b>. Adj. R² = 1 − (1 − R²)(n − 1)/(n − k) = <b>${m.adj.toFixed(4)}</b>.</p></details>` +
+          `<details><summary>Langkah 7. Standard error, uji t, dan p-value</summary><p>MSE = SSE / (n − k) = ${m.sse.toFixed(2)} / ${m.df} = <b>${m.mse.toFixed(3)}</b>. Untuk tiap koefisien: SE = √(MSE × elemen diagonal (XᵀX)⁻¹), t = b / SE, lalu p-value dari distribusi t dengan df = ${m.df}. Hasilnya ada di tabel koefisien di atas.</p></details>` +
+          `<details><summary>Langkah 8. Uji F menyeluruh dan VIF</summary><p>F = (SSR / ${k - 1}) / MSE = <b>${m.F.toFixed(2)}</b>, p ${fp(m.pF)}. Ini menguji apakah minimal satu variabel X berpengaruh.</p><p>VIF tiap variabel = 1 / (1 − R²j), dengan R²j dari regresi variabel itu terhadap variabel X lainnya: ${vs.map((v, i) => v + " " + vif[i].toFixed(1)).join(", ")}.</p></details>`;
+      }
+      /* ---------- bagian 2: eksplorasi ---------- */
+      const opt = NUM.map(
+        (k) => `<option value="${k}">${DESC[k]}</option>`,
+      ).join("");
+      $("#sx").innerHTML = opt;
+      $("#sy").innerHTML = opt;
+      $("#sx").value = "Study_Hours";
+      $("#sy").value = Y;
+      function explore() {
+        const xk = $("#sx").value,
+          yk = $("#sy").value,
+          xs = col[xk],
+          ys = col[yk],
+          mx = mean(xs),
+          my = mean(ys),
+          sl =
+            sum(xs.map((v, i) => (v - mx) * (ys[i] - my))) /
+            sum(xs.map((v) => (v - mx) ** 2)),
+          ic = my - sl * mx,
+          r = corr(xs, ys),
+          g = $("#cg").checked;
+        const tx = ticks(Math.min(...xs), Math.max(...xs));
+        $("#sp").innerHTML = scatter({
+          id: "c3",
+          xs,
+          ys,
+          xl: DESC[xk] || xk,
+          yl: DESC[yk] || yk,
+          cls: col.Gender.map((v) => (g ? (v ? "m" : "f") : "a")),
+          tips: col.Student_ID.map(
+            (id, i) =>
+              `Siswa ${id} (${col.Gender[i] ? "M" : "F"}): ${xk} ${xs[i]}, ${yk} ${ys[i]}`,
+          ),
+          lines: $("#cl").checked
+            ? [[tx[0], sl * tx[0] + ic, tx.at(-1), sl * tx.at(-1) + ic, "ln"]]
+            : [],
+        });
+        $("#lg").innerHTML = g
+          ? `<span><i style="background:var(--g1)"></i>F</span><span><i style="background:var(--acc)"></i>M</span>`
+          : "";
+        const st =
+          Math.abs(r) >= 0.8
+            ? "sangat kuat"
+            : Math.abs(r) >= 0.6
+              ? "kuat"
+              : Math.abs(r) >= 0.4
+                ? "sedang"
+                : "lemah";
+        $("#es").innerHTML =
+          `<table><tr><th>Ringkasan</th><th>Nilai</th></tr><tr><td>Korelasi r</td><td>${r.toFixed(3)}</td></tr><tr><td>R² (dua variabel ini)</td><td>${(r * r).toFixed(3)}</td></tr><tr><td>Kemiringan</td><td>${f(sl, 4)}</td></tr><tr><td>Intersep</td><td>${f(ic, 3)}</td></tr><tr><td>Rata-rata X / Y</td><td>${mx.toFixed(2)} / ${my.toFixed(2)}</td></tr></table><p class="sub" style="margin-top:10px">Hubungan ${xk === yk ? "identik" : st + " dan " + (r > 0 ? "positif" : "negatif")}. Tiap kenaikan 1 pada ${DESC[xk]}, rata-rata ${DESC[yk]} berubah ${f(sl, 3)}. Angka ini belum mengontrol variabel lain, makanya bisa berbeda dari koefisien di regresi berganda.</p>`;
+      }
+      ["#sx", "#sy", "#cg", "#cl"].forEach((s) => ($(s).onchange = explore));
+      $("#sw").onclick = () => {
+        const a = $("#sx").value;
+        $("#sx").value = $("#sy").value;
+        $("#sy").value = a;
+        explore();
+      };
+      let h =
+        "<div></div>" +
+        NUM.map((n) => `<div class="h" title="${n}">${DESC[n]}</div>`).join("");
+      NUM.forEach((r) => {
+        h += `<div class="l">${DESC[r]}</div>`;
+        NUM.forEach((c) => {
+          const v = corr(col[r], col[c]);
+          h += `<div class="c" data-x="${c}" data-y="${r}" style="background:${v >= 0 ? "rgba(11,79,158," : "rgba(163,18,63,"}${(0.15 + Math.abs(v) * 0.75).toFixed(2)});color:${Math.abs(v) > 0.6 ? "#fff" : "inherit"}" title="${c} vs ${r}">${v.toFixed(2)}</div>`;
+        });
+      });
+      $("#hm").innerHTML = h;
+      $("#hm").onclick = (e) => {
+        const c = e.target.closest(".c");
+        if (c) {
+          $("#sx").value = c.dataset.x;
+          $("#sy").value = c.dataset.y;
+          explore();
+          $("#sp").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+      /* tooltip */
+      const tip = $("#tip");
+      document.addEventListener("mousemove", (e) => {
+        const t = e.target.dataset && e.target.dataset.t;
+        if (t) {
+          tip.textContent = t;
+          tip.style.display = "block";
+          tip.style.left = Math.min(e.clientX + 14, innerWidth - 250) + "px";
+          tip.style.top = e.clientY + 14 + "px";
+        } else tip.style.display = "none";
+      });
+      /* ---------- simulasi peluang lolos ---------- */
+      const full = ols(Y, XV),
+        SDV = Math.sqrt(full.mse),
+        SIMK = XV.slice(0, 7),
+        sim = {};
+      const ST = {
+        Age: 1,
+        Study_Hours: 1,
+        Sleep_Hours: 0.5,
+        Attendance: 1,
+        Monthly_Spending: 50,
+        Screen_Hours: 0.1,
+        Satisfaction: 1,
+      };
+      const cdf = (z) => {
+        const t = 1 / (1 + 0.2316419 * Math.abs(z)),
+          p =
+            0.3989423 *
+            Math.exp((-z * z) / 2) *
+            t *
+            (0.3193815 +
+              t *
+                (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+        return z > 0 ? 1 - p : p;
+      };
+      $("#sl").innerHTML = SIMK.map((k) => {
+        const lo = Math.min(...col[k]),
+          hi = Math.max(...col[k]);
+        return `<div class="row"><label for="s_${k}">${DESC[k]}<small>rentang data ${lo} sampai ${hi}</small></label><output id="o_${k}" for="s_${k}"></output><input type="range" id="s_${k}" min="${lo}" max="${hi}" step="${ST[k]}"></div>`;
+      }).join("");
+      $("#sd").textContent = SDV.toFixed(1);
+      $("#avg").textContent = mean(col[Y]).toFixed(1);
+      function simUpdate() {
+        SIMK.forEach((k) => {
+          sim[k] = +$("#s_" + k).value;
+          $("#o_" + k).textContent = sim[k];
+        });
+        sim.Gender = +$("#gM").checked;
+        const y = sum(
+            [1, ...XV.map((k) => sim[k])].map((v, i) => v * full.b[i]),
+          ),
+          thr = +$("#thr").value;
+        $("#ot").textContent = thr;
+        const p = 1 - cdf((thr - y) / SDV),
+          pc = Math.round(p * 100);
+        $("#score").textContent = Math.max(0, Math.min(100, y)).toFixed(1);
+        $("#pct").textContent = pc + "%";
+        $("#xp").innerHTML = Array.from(
+          { length: 10 },
+          (_, i) =>
+            `<i><b style="width:${Math.max(0, Math.min(1, p * 10 - i)) * 100}%"></b></i>`,
+        ).join("");
+        $("#verdict").textContent =
+          pc >= 90
+            ? "Hampir pasti lolos."
+            : pc >= 70
+              ? "Sangat mungkin lolos."
+              : pc >= 50
+                ? "Peluang cukup besar, tapi belum aman."
+                : pc >= 30
+                  ? "Peluangnya kecil."
+                  : pc >= 10
+                    ? "Sulit lolos dengan kebiasaan ini."
+                    : "Hampir pasti belum lolos.";
+        const cs = XV.map((k, i) => ({
+            k,
+            c: full.b[i + 1] * (sim[k] - mean(col[k])),
+          })).sort((a, b) => Math.abs(b.c) - Math.abs(a.c)),
+          mx = Math.max(3, Math.abs(cs[0].c));
+        $("#contrib").innerHTML = cs
+          .map(
+            (o) =>
+              `<li><span>${DESC[o.k]}</span><div class="tr"><i class="${o.c >= 0 ? "up" : "dn"}" style="width:${(Math.abs(o.c) / mx) * 50}%"></i></div><em>${o.c >= 0 ? "+" : ""}${o.c.toFixed(1)}</em></li>`,
+          )
+          .join("");
+      }
+      function put(v) {
+        SIMK.forEach((k) => ($("#s_" + k).value = v[k]));
+        $(v.Gender ? "#gM" : "#gF").checked = true;
+        simUpdate();
+      }
+      const rowOf = (i) => Object.fromEntries(XV.map((k) => [k, col[k][i]])),
+        avgRow = () => ({
+          ...Object.fromEntries(XV.map((k) => [k, mean(col[k])])),
+          Gender: 0,
+        });
+      $("#sl").oninput = simUpdate;
+      $("#thr").oninput = simUpdate;
+      document
+        .querySelectorAll("[name=gd]")
+        .forEach((e) => (e.onchange = simUpdate));
+      $("#pa").onclick = () => put(avgRow());
+      $("#pb").onclick = () => put(rowOf(col[Y].indexOf(Math.max(...col[Y]))));
+      $("#pw").onclick = () => put(rowOf(col[Y].indexOf(Math.min(...col[Y]))));
+      put(avgRow());
+      model();
+      explore();
+    </script>
+  </body>
+</html>
