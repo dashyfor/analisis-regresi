@@ -1,0 +1,2771 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard data_uji: apa yang memengaruhi PD</title>
+    <style>
+      /* =====================================================================
+   WALLPAPER: ganti foto di sini.
+   1) Taruh foto Anda di folder yang sama dengan index.html
+   2) Namai wallpaper.jpg (atau ubah nama file di bawah ini)
+   Belum ada foto? Latar gradien laut senja otomatis tampil.
+   Saran foto: lebar 1920px, ukuran di bawah 1 MB agar cepat dibuka.
+   ===================================================================== */
+      :root {
+        --wallpaper: url("wallpaper.jpg");
+      }
+      @font-face {
+        font-family: Monocraft;
+        src: url("fonts/Monocraft.woff2") format("woff2");
+        font-display: swap;
+      }
+      :root {
+        --font: Monocraft, ui-monospace, Menlo, monospace;
+        --ink: #0e1621;
+        --mute: #34424f;
+        --glass: rgba(255, 255, 255, 0.58);
+        --edge: rgba(255, 255, 255, 0.8);
+        --edge2: rgba(255, 255, 255, 0.3);
+        --spec: 0.3;
+        --scrim: rgba(255, 255, 255, 0.14);
+        --line: rgba(30, 45, 60, 0.18);
+        --shadow: rgba(10, 25, 45, 0.22);
+        --inset: rgba(255, 255, 255, 0.5);
+        --acc: #0a62c9;
+        --chip: #0a62c9;
+        --pos: #0b7a5e;
+        --neg: #c0264f;
+        --g1: #b35f00;
+        --ptstroke: rgba(255, 255, 255, 0.95);
+        --field: rgba(255, 255, 255, 0.62);
+        --track: rgba(20, 35, 55, 0.2);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f2f6fa;
+          --mute: #bcc8d4;
+          --glass: rgba(20, 27, 38, 0.55);
+          --edge: rgba(255, 255, 255, 0.3);
+          --edge2: rgba(255, 255, 255, 0.08);
+          --spec: 0.12;
+          --scrim: rgba(0, 0, 0, 0.3);
+          --line: rgba(255, 255, 255, 0.17);
+          --shadow: rgba(0, 0, 0, 0.5);
+          --inset: rgba(0, 0, 0, 0.28);
+          --acc: #7cbbff;
+          --chip: #1e6fd0;
+          --pos: #52d6b4;
+          --neg: #ff7fa2;
+          --g1: #ffb454;
+          --ptstroke: rgba(20, 26, 36, 0.95);
+          --field: rgba(255, 255, 255, 0.11);
+          --track: rgba(255, 255, 255, 0.2);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font: 14px/1.75 var(--font);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          linear-gradient(var(--scrim), var(--scrim)),
+          var(--wallpaper) center/cover no-repeat,
+          radial-gradient(60% 50% at 20% 18%, #3f8f8a 0, transparent 70%),
+          radial-gradient(50% 45% at 88% 28%, #d8a65f 0, transparent 70%),
+          radial-gradient(65% 60% at 60% 98%, #2f5278 0, transparent 70%),
+          #1d3342;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.3;
+        font-weight: 400;
+      }
+      .w {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 18px;
+      }
+      /* liquid glass: blur + saturasi, tepi terang, kilau tipis di sudut */
+      .panel,
+      section > h2,
+      section > .sub,
+      footer.w,
+      .hero {
+        background: var(--glass);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        backdrop-filter: blur(28px) saturate(180%);
+        border: 1px solid var(--edge);
+        border-radius: 26px;
+        box-shadow:
+          inset 0 1px 0 var(--edge),
+          inset 0 -1px 0 var(--edge2),
+          0 10px 36px var(--shadow);
+        position: relative;
+      }
+      .panel::before,
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, var(--spec)),
+          transparent 38%,
+          transparent 64%,
+          rgba(255, 255, 255, calc(var(--spec) * 0.4))
+        );
+      }
+      .panel > *,
+      .hero > * {
+        position: relative;
+      }
+      header {
+        padding: 28px 0 4px;
+      }
+      .hero {
+        padding: 30px 32px;
+      }
+      h1 {
+        font-size: clamp(22px, 5.4vw, 38px);
+        letter-spacing: -0.01em;
+      }
+      .lead {
+        color: var(--mute);
+        max-width: 62ch;
+        margin: 12px 0 18px;
+      }
+      .how {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+        gap: 10px;
+        margin: 0 0 20px;
+        padding: 0;
+        list-style: none;
+        counter-reset: s;
+      }
+      .how li {
+        counter-increment: s;
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 16px;
+        padding: 11px 14px 11px 48px;
+        position: relative;
+        font-size: 13px;
+      }
+      .how li::before {
+        content: counter(s);
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--chip);
+        color: #fff;
+        text-align: center;
+        line-height: 26px;
+        font-size: 13px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      nav a {
+        padding: 7px 16px;
+        border-radius: 999px;
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        color: var(--ink);
+        font-size: 13px;
+        text-decoration: none;
+        transition: background 0.2s;
+      }
+      nav a:hover {
+        background: var(--chip);
+        color: #fff;
+      }
+      section {
+        padding: 22px 0 6px;
+      }
+      section > h2 {
+        display: inline-block;
+        font-size: clamp(16px, 3.6vw, 21px);
+        padding: 10px 22px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        max-width: 100%;
+      }
+      section > .sub {
+        display: table;
+        padding: 11px 18px;
+        border-radius: 18px;
+      }
+      .sub {
+        color: var(--mute);
+        margin: 0;
+        max-width: 74ch;
+      }
+      .panel {
+        padding: 22px;
+        margin-top: 16px;
+      }
+      .panel h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+        gap: 0 16px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip,
+      .seg {
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 999px;
+        padding: 5px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+        position: relative;
+      }
+      .chip input,
+      .seg input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        cursor: pointer;
+      }
+      .chip:has(input:checked),
+      .seg:has(input:checked) {
+        background: var(--chip);
+        border-color: transparent;
+        color: #fff;
+      }
+      :is(.chip, .seg):has(input:focus-visible),
+      nav a:focus-visible,
+      select:focus-visible,
+      button:focus-visible,
+      input[type="range"]:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 3px;
+      }
+      .strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 26px;
+        margin: 16px 0 0;
+        font-size: 13px;
+        color: var(--mute);
+      }
+      .strip b {
+        color: var(--ink);
+        font-weight: 400;
+        font-size: 15px;
+      }
+      .sc {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        padding: 7px 11px;
+        text-align: right;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      th {
+        font-weight: 400;
+        color: var(--mute);
+      }
+      .mx td,
+      .mx th {
+        padding: 4px 7px;
+      }
+      .ns {
+        color: var(--mute);
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .tk {
+        font-size: 15px;
+        fill: var(--mute);
+      }
+      .ax {
+        font-size: 16px;
+        fill: var(--ink);
+      }
+      .gr {
+        stroke: var(--line);
+        stroke-width: 1;
+      }
+      .zero {
+        stroke: var(--mute);
+        stroke-width: 1.2;
+      }
+      .ln {
+        stroke: var(--neg);
+        stroke-width: 2.4;
+        stroke-linecap: round;
+      }
+      .ln.d {
+        stroke: var(--mute);
+        stroke-dasharray: 5 4;
+        stroke-width: 1.5;
+      }
+      .pt {
+        opacity: 0.82;
+        stroke: var(--ptstroke);
+        stroke-width: 1;
+      }
+      .pt:hover {
+        opacity: 1;
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+      .a,
+      .m {
+        fill: var(--acc);
+      }
+      .f {
+        fill: var(--g1);
+      }
+      .pos {
+        fill: var(--pos);
+      }
+      .neg {
+        fill: var(--neg);
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+      summary {
+        cursor: pointer;
+      }
+      details p {
+        margin: 8px 0;
+        color: var(--mute);
+        max-width: 80ch;
+        font-size: 13px;
+      }
+      code {
+        background: var(--field);
+        padding: 2px 7px;
+        border-radius: 6px;
+      }
+      .eq {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 8px 0;
+        font-size: 12px;
+      }
+      .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: end;
+        margin-bottom: 14px;
+      }
+      .ctl label {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        color: var(--mute);
+        gap: 5px;
+      }
+      select,
+      button {
+        font: inherit;
+        font-size: 13px;
+        padding: 8px 14px;
+        border: 1px solid var(--edge2);
+        border-radius: 12px;
+        background: var(--field);
+        color: var(--ink);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        max-width: 100%;
+      }
+      select option {
+        color: #111;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: var(--chip);
+        color: #fff;
+      }
+      .ctl .ck {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+        font-size: 13px;
+      }
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--chip);
+      }
+      .hm {
+        display: grid;
+        grid-template-columns: 104px repeat(8, minmax(46px, 1fr));
+        gap: 3px;
+        font-size: 11px;
+        min-width: 560px;
+      }
+      .hm div {
+        padding: 8px 1px;
+        text-align: center;
+        border-radius: 8px;
+      }
+      .hm .l {
+        text-align: right;
+        color: var(--mute);
+        padding-right: 6px;
+      }
+      .hm .h {
+        color: var(--mute);
+        font-size: 9.5px;
+        overflow: hidden;
+      }
+      .hm .c {
+        cursor: pointer;
+      }
+      .hm .c:hover {
+        outline: 2px solid var(--ink);
+      }
+      .leg {
+        font-size: 12px;
+        color: var(--mute);
+        display: flex;
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .leg i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      #tip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(15, 20, 28, 0.88);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        display: none;
+        z-index: 9;
+        max-width: 260px;
+      }
+      ul.r {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      ul.r li {
+        margin: 8px 0;
+      }
+      footer.w {
+        margin: 26px auto 40px;
+        width: calc(100% - 36px);
+        padding: 14px 20px;
+        border-radius: 20px;
+        color: var(--mute);
+        font-size: 12px;
+      }
+      /* simulasi */
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 10px;
+        margin-bottom: 14px;
+        align-items: baseline;
+      }
+      .row label {
+        font-size: 13px;
+      }
+      .row small {
+        color: var(--mute);
+        font-size: 11px;
+        display: block;
+      }
+      .row output,
+      #ot {
+        background: var(--field);
+        border: 1px solid var(--edge2);
+        border-radius: 999px;
+        padding: 1px 12px;
+        min-width: 56px;
+        text-align: center;
+        font-size: 13px;
+      }
+      .row input {
+        grid-column: 1/-1;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 28px;
+        background: transparent;
+        margin: 2px 0;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--track);
+      }
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--track);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 26px;
+        height: 26px;
+        margin-top: -10px;
+        border: 0;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 26px;
+        height: 26px;
+        border: 0;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      .seg2 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 4px 0 16px;
+      }
+      .pre {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .xpbox {
+        background: var(--inset);
+        border: 1px solid var(--edge2);
+        border-radius: 20px;
+        padding: 20px 16px;
+        text-align: center;
+      }
+      .lvl span {
+        display: block;
+        font-size: clamp(40px, 11vw, 60px);
+        line-height: 1.1;
+      }
+      .lvl small {
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .xp {
+        display: flex;
+        gap: 4px;
+        margin: 16px 0 12px;
+      }
+      .xp i {
+        flex: 1;
+        height: 12px;
+        border-radius: 6px;
+        background: var(--track);
+        display: block;
+        overflow: hidden;
+      }
+      .xp b {
+        display: block;
+        height: 100%;
+        background: var(--acc);
+        border-radius: 6px;
+      }
+      .big {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      .big strong {
+        font-weight: 400;
+        color: var(--acc);
+        font-size: clamp(24px, 6vw, 32px);
+        margin-left: 8px;
+      }
+      #verdict {
+        margin: 6px 0 0;
+      }
+      .thr {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 18px 0 4px;
+        font-size: 13px;
+        align-items: center;
+      }
+      .cl {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .cl li {
+        display: grid;
+        grid-template-columns: minmax(82px, 1fr) 2fr 52px;
+        gap: 8px;
+        align-items: center;
+        margin: 9px 0;
+        font-size: 12px;
+      }
+      .cl em {
+        font-style: normal;
+        text-align: right;
+      }
+      .tr {
+        height: 10px;
+        background: var(--track);
+        border-radius: 99px;
+        position: relative;
+        overflow: hidden;
+      }
+      .tr::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--mute);
+      }
+      .tr i {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+      }
+      .tr .up {
+        left: 50%;
+        background: var(--pos);
+        border-radius: 0 99px 99px 0;
+      }
+      .tr .dn {
+        right: 50%;
+        background: var(--neg);
+        border-radius: 99px 0 0 99px;
+      }
+      .note {
+        font-size: 12px;
+        color: var(--mute);
+        margin: 10px 0 0;
+      }
+      @supports not (
+        (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+      ) {
+        :root {
+          --glass: rgba(245, 248, 252, 0.94);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --glass: rgba(24, 32, 44, 0.94);
+          }
+        }
+      }
+      @media (prefers-reduced-transparency: reduce) {
+        :root {
+          --glass: rgba(245, 248, 252, 0.97);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --glass: rgba(24, 32, 44, 0.97);
+          }
+        }
+      }
+      @media (max-width: 520px) {
+        .hero {
+          padding: 22px 20px;
+        }
+        .panel {
+          padding: 18px;
+        }
+        .hm {
+          min-width: 520px;
+        }
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+      .btn {
+        display: inline-block;
+        background: var(--chip);
+        color: #fff;
+        border-radius: 999px;
+        padding: 10px 22px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        font-size: 14px;
+        transition: filter 0.2s;
+      }
+      .btn:hover {
+        filter: brightness(1.12);
+      }
+      .btn:has(input:focus-visible) {
+        outline: 2px solid var(--acc);
+        outline-offset: 3px;
+      }
+      .dzone {
+        border: 2px dashed var(--edge);
+        border-radius: 20px;
+        padding: 20px;
+        transition: background 0.2s;
+      }
+      .dzone.over {
+        background: var(--field);
+      }
+      .acts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .st {
+        margin: 14px 0 0;
+        font-size: 13px;
+        color: var(--pos);
+      }
+      .st.bad {
+        color: var(--neg);
+      }
+      #paste {
+        width: 100%;
+        min-height: 130px;
+        font: inherit;
+        font-size: 12px;
+        background: var(--field);
+        color: var(--ink);
+        border: 1px solid var(--edge2);
+        border-radius: 14px;
+        padding: 12px;
+        margin-top: 12px;
+      }
+      .tg {
+        font-size: 10px;
+        color: var(--acc);
+      }
+      .chip small {
+        opacity: 0.75;
+        font-size: 11px;
+      }
+      tr.clk {
+        cursor: pointer;
+      }
+      tr.clk:hover td {
+        background: var(--field);
+      }
+      #err h3 {
+        color: var(--neg);
+      }
+      #err p {
+        margin: 0;
+        color: var(--ink);
+      }
+      .segs {
+        grid-column: 1/-1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .k0,
+      .k0b {
+        fill: var(--acc);
+        background: var(--acc);
+      }
+      .k1,
+      .k1b {
+        fill: var(--g1);
+        background: var(--g1);
+      }
+      .k2,
+      .k2b {
+        fill: var(--pos);
+        background: var(--pos);
+      }
+      .k3,
+      .k3b {
+        fill: var(--neg);
+        background: var(--neg);
+      }
+      .k4,
+      .k4b {
+        fill: #8a63d2;
+        background: #8a63d2;
+      }
+      .k5,
+      .k5b {
+        fill: #8c8c8c;
+        background: #8c8c8c;
+      }
+      .k0b,
+      .k1b,
+      .k2b,
+      .k3b,
+      .k4b,
+      .k5b {
+        fill: none;
+      }
+      .wn {
+        color: var(--mute);
+        font-size: 12px;
+        margin: 12px 0 0;
+      }
+      .fq {
+        margin-top: 12px;
+      }
+      select#ysel {
+        min-width: 200px;
+      }
+      #c3d {
+        width: 100%;
+        display: block;
+        border-radius: 18px;
+        background: var(--inset);
+        border: 1px solid var(--edge2);
+        cursor: grab;
+        touch-action: none;
+      }
+      #c3d:active {
+        cursor: grabbing;
+      }
+      .cap {
+        font-size: 12px;
+        color: var(--mute);
+        display: block;
+        margin-bottom: 5px;
+      }
+      .vm {
+        display: flex;
+        gap: 8px;
+      }
+      .ctl .vm label.seg {
+        flex-direction: row;
+        color: var(--ink);
+        font-size: 13px;
+        gap: 0;
+      }
+      .ctl .vm label.seg:has(input:checked) {
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="w">
+      <div class="hero">
+        <h1 id="h1">Apa yang memengaruhi hasil data Anda?</h1>
+        <p class="lead">
+          Unggah data Anda (CSV, Excel, atau PDF), pilih hasil yang ingin
+          dipahami, lalu dashboard menghitung korelasi, regresi tunggal, regresi
+          berganda, dan simulasi prediksinya. Tanpa perlu paham statistik.
+        </p>
+        <ol class="how">
+          <li>Unggah file atau tempel data</li>
+          <li>Pilih hasil yang ingin dipahami</li>
+          <li>Baca kesimpulan, lalu coba simulasinya</li>
+        </ol>
+        <nav>
+          <a href="#data">Data</a><a href="#simulasi">Simulasi</a
+          ><a href="#regresi">Faktor penentu</a><a href="#tunggal">Korelasi</a
+          ><a href="#eksplor">Jelajah</a>
+        </nav>
+      </div>
+    </header>
+    <main class="w">
+      <section id="data">
+        <h2>Data Anda</h2>
+        <p class="sub">
+          Format: baris pertama berisi nama kolom, tiap baris berikutnya satu
+          data (satu orang). Kolom teks seperti gender otomatis dikenali sebagai
+          kategori.
+        </p>
+        <div class="panel">
+          <div class="dzone" id="dz">
+            <div class="acts">
+              <label class="btn"
+                ><input
+                  type="file"
+                  id="f"
+                  hidden
+                  accept=".csv,.tsv,.txt,.xlsx,.xls,.ods,.pdf"
+                />Pilih file data</label
+              ><button type="button" id="tp">Tempel data</button
+              ><button type="button" id="sm">Pakai data bawaan</button
+              ><select id="sheet" hidden aria-label="Pilih sheet"></select>
+            </div>
+            <p class="sub" style="margin-top: 12px; font-size: 12px">
+              Atau seret file ke kotak ini. Mendukung CSV, TSV, TXT, Excel
+              (.xlsx, .xls, .ods), dan PDF yang berisi tabel.
+            </p>
+            <textarea
+              id="paste"
+              hidden
+              placeholder="Tempel data dari Excel atau Google Sheets di sini, termasuk baris nama kolom"
+            ></textarea>
+            <div class="acts" style="margin-top: 10px">
+              <button type="button" id="pb2" hidden>
+                Hitung data tempelan
+              </button>
+            </div>
+          </div>
+          <p class="st" id="st" aria-live="polite"></p>
+          <details class="fq">
+            <summary>File apa saja yang bisa dibaca?</summary>
+            <p>
+              CSV, TSV, dan TXT: paling akurat. Excel: dibaca per sheet (jika
+              ada beberapa sheet, muncul pilihan sheet). PDF: hanya PDF yang
+              teksnya bisa diseleksi dan berisi tabel; hasil scan atau foto
+              tidak bisa dibaca. Karena tata letak PDF tidak baku, selalu cek
+              pratinjau data di bawah. Data tidak dikirim ke mana pun: semua
+              dihitung di browser Anda.
+            </p>
+          </details>
+        </div>
+        <div class="panel">
+          <h3>Pratinjau data</h3>
+          <div class="sc" id="pv"></div>
+          <div class="acts" style="margin-top: 12px">
+            <span class="wn" id="pvn" style="margin: 0"></span
+            ><button type="button" id="pvb"></button>
+          </div>
+          <p class="wn" id="ign"></p>
+        </div>
+        <div class="panel">
+          <h3>Pilih apa yang dihitung</h3>
+          <div class="ctl">
+            <label
+              >Hasil yang ingin dipahami (Y)<select id="ysel"></select
+            ></label>
+          </div>
+          <p class="sub" style="font-size: 13px; margin-bottom: 10px">
+            Faktor yang ikut dihitung (X). Kolom ID otomatis tidak dicentang.
+          </p>
+          <div class="chips" id="chips"></div>
+          <p class="wn" id="wn"></p>
+        </div>
+      </section>
+      <div class="panel" id="err" hidden></div>
+      <div id="out">
+        <section id="simulasi">
+          <h2>Simulasi: peluang mencapai target</h2>
+          <p class="sub">
+            Atur kondisi satu data, lalu lihat perkiraan hasil dan peluangnya
+            mencapai batas yang Anda tentukan.
+          </p>
+          <div class="g2">
+            <div class="panel">
+              <h3>1. Atur kondisi</h3>
+              <div id="sl"></div>
+              <div class="pre">
+                <button type="button" id="pa">Kondisi rata-rata</button
+                ><button type="button" id="pb">Contoh hasil tertinggi</button
+                ><button type="button" id="pw">Contoh hasil terendah</button>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>2. Hasil perkiraan</h3>
+              <div class="xpbox">
+                <div class="lvl">
+                  <span id="score">0</span
+                  ><small>perkiraan <span id="yl"></span></small>
+                </div>
+                <div class="xp" id="xp"></div>
+                <p class="big">
+                  Peluang mencapai batas<strong id="pct">0%</strong>
+                </p>
+                <p id="verdict"></p>
+              </div>
+              <label class="thr" for="thr"
+                >Batas yang ingin dicapai <output id="ot">0</output></label
+              ><input type="range" id="thr" />
+              <h3 style="margin-top: 20px">
+                Faktor mana yang mengangkat atau menurunkan?
+              </h3>
+              <ul class="cl" id="contrib"></ul>
+              <p class="note">
+                Hijau menambah hasil, merah mengurangi, dibandingkan kondisi
+                rata-rata (rata-rata hasil <span id="avg"></span>).
+              </p>
+              <details>
+                <summary>Bagaimana peluang ini dihitung?</summary>
+                <p>
+                  Model regresi menebak hasil dari semua faktor sekaligus.
+                  Tebakan itu rata-rata meleset sekitar <span id="sd"></span>,
+                  jadi peluang adalah kemungkinan hasil sebenarnya sama dengan
+                  atau di atas batas (kurva lonceng). Batas bisa Anda geser.
+                </p>
+                <p>
+                  Catatan: kalau faktor-faktor di data saling berkaitan kuat,
+                  menggeser satu slider saja berarti faktor lain dianggap tetap,
+                  kondisi yang jarang terjadi di dunia nyata. Pakai tombol
+                  contoh untuk kombinasi yang lebih realistis. Ini perkiraan
+                  statistik, bukan jaminan.
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
+        <section id="regresi">
+          <h2>Faktor penentu (regresi berganda)</h2>
+          <p class="sub">
+            Semua faktor dihitung bersamaan. Centang atau cabut faktor di bagian
+            Data untuk melihat hasilnya berubah.
+          </p>
+          <div class="panel"><div class="strip" id="kpi"></div></div>
+          <div class="g2">
+            <div class="panel">
+              <h3>Pengaruh relatif tiap faktor (beta standar)</h3>
+              <div id="bars"></div>
+              <p class="sub" style="font-size: 13px">
+                Hijau menaikkan hasil, merah menurunkan. Tanda * artinya
+                pengaruhnya belum meyakinkan secara statistik (p di atas 0.05),
+                jadi batangnya dipudarkan.
+              </p>
+            </div>
+            <div class="panel">
+              <h3>Artinya apa?</h3>
+              <ul class="r" id="read"></ul>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Tabel koefisien</h3>
+            <div class="sc" id="coef"></div>
+          </div>
+          <div class="g2">
+            <div class="panel">
+              <h3>Nilai aktual vs prediksi</h3>
+              <div id="avp"></div>
+            </div>
+            <div class="panel">
+              <h3>Sisaan (residual) vs prediksi</h3>
+              <div id="rvf"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Behind the scenes: cara angkanya dihitung</h3>
+            <p class="sub">
+              Semua langkah di bawah memakai model yang sedang dipilih.
+            </p>
+            <div id="steps"></div>
+          </div>
+        </section>
+        <section id="tunggal">
+          <h2>Korelasi dan regresi tunggal</h2>
+          <p class="sub">
+            Tiap faktor dilihat sendirian terhadap <span id="sy"></span>. Klik
+            baris untuk melihat grafiknya.
+          </p>
+          <div class="panel"><div class="sc" id="single"></div></div>
+        </section>
+        <section id="eksplor">
+          <h2>Jelajah data</h2>
+          <p class="sub">
+            Pilih sumbu, arahkan kursor ke titik untuk melihat datanya. Klik
+            kotak di peta korelasi untuk memakai pasangan variabel itu.
+          </p>
+          <div class="panel">
+            <div class="ctl">
+              <div class="vmw">
+                <span class="cap">Tampilan</span>
+                <div class="vm" role="radiogroup" aria-label="Tampilan grafik">
+                  <label class="seg"
+                    ><input type="radio" name="vm" id="v2" checked />2D</label
+                  ><label class="seg"
+                    ><input type="radio" name="vm" id="v3" />3D</label
+                  >
+                </div>
+              </div>
+              <label>Sumbu X<select id="sx"></select></label>
+              <label>Sumbu Y<select id="sy2"></select></label>
+              <label class="d3only" hidden
+                >Sumbu Z (kedalaman)<select id="sz"></select
+              ></label>
+              <button id="sw" type="button">Tukar X dan Y</button>
+              <label>Warnai berdasarkan<select id="cg"></select></label>
+              <label class="ck"
+                ><input type="checkbox" id="cl" checked /><span id="clt"
+                  >Garis regresi</span
+                ></label
+              >
+              <button type="button" id="ar" class="d3only" hidden>
+                Putar otomatis</button
+              ><button type="button" id="rs" class="d3only" hidden>
+                Reset tampilan</button
+              ><button type="button" id="zi" class="d3only" hidden>
+                Zoom +</button
+              ><button type="button" id="zo" class="d3only" hidden>
+                Zoom -
+              </button>
+            </div>
+            <div class="g2" style="align-items: center">
+              <div>
+                <div id="sp"></div>
+                <div class="leg" id="lg"></div>
+              </div>
+              <div id="es"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Peta korelasi</h3>
+            <div class="sc"><div class="hm" id="hm"></div></div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer class="w">
+      Semua perhitungan berjalan di browser Anda, tidak ada data yang dikirim.
+      Font: Monocraft oleh Idrees Hassan (SIL Open Font License). Pembaca Excel:
+      SheetJS. Pembaca PDF: pdf.js.
+    </footer>
+    <div id="tip"></div>
+    <script>
+      const SAMPLE = `Timestamp,jam,tinggi,berat,Persepsi,PD
+10/8/2026 8:16:38,5,169,81,4,4
+10/8/2026 8:16:40,5,170,49,2,9
+10/8/2026 8:17:01,6,170,56,5,8
+10/8/2026 8:17:02,8,162,50,8,7
+10/8/2026 8:17:04,7,166,50,6,9
+10/8/2026 8:17:06,7,160,79,6,7
+10/8/2026 8:17:17,5,180,80,6,4
+10/8/2026 8:17:19,7,151,48,7,6
+10/8/2026 8:17:25,5,170,130,6,8
+10/8/2026 8:17:30,8,180,56,3,5
+10/8/2026 8:17:40,7,158,52,7,8
+10/8/2026 8:17:41,7,157,59,6,6
+10/8/2026 8:17:47,6,174,64,9,9
+10/8/2026 8:17:51,6,168,49,5,8
+10/8/2026 8:17:55,6,167,50,8,9
+10/8/2026 8:18:32,2,173,63,5,4
+10/8/2026 8:18:41,7,165,58,9,9
+10/8/2026 8:18:53,1,170,60,9,9
+10/8/2026 8:18:54,4,160,57,9,9
+10/8/2026 8:19:05,5,152,60,5,3
+10/8/2026 8:19:18,6,167,52,6,5
+10/8/2026 8:19:19,3,167,58,9,9
+10/8/2026 8:19:25,1,170,60,9,9
+10/8/2026 8:19:25,6,164,57,8,4
+10/8/2026 8:19:44,7,155,45,7,7
+10/8/2026 8:19:52,8,168,45,5,5
+10/8/2026 8:19:52,2,170,60,5,5
+10/8/2026 8:20:24,1,174,68,9,9
+10/8/2026 8:20:30,7,170,60,7,7
+10/8/2026 8:20:47,2,184,140,7,9
+10/16/2026 8:00:05,3,173,90,4,4
+10/16/2026 8:00:06,5,162,57,5,2
+10/16/2026 8:00:21,9,165,70,8,5
+10/16/2026 8:00:30,8,170,70,7,9
+10/16/2026 8:01:27,5,158,57,5,6
+10/16/2026 8:02:13,8,170,45,2,9
+10/16/2026 8:03:08,4,167,53,4,4
+10/16/2026 8:03:11,10,166,56,5,5
+10/16/2026 8:03:50,7,160,55,5,5
+10/16/2026 8:04:57,6,173,67,6,7
+10/16/2026 8:05:03,5,147,45,4,4
+10/16/2026 8:05:21,6,165,45,7,7`;
+      const $ = (s) => document.querySelector(s);
+      const sum = (a) => a.reduce((s, v) => s + v, 0),
+        mean = (a) => sum(a) / a.length,
+        sd = (a) => {
+          const m = mean(a);
+          return Math.sqrt(sum(a.map((v) => (v - m) ** 2)) / (a.length - 1));
+        };
+      const pcorr = (a, b) => {
+        const x = [],
+          y = [];
+        a.forEach((v, i) => {
+          if (!isNaN(v) && !isNaN(b[i])) {
+            x.push(v);
+            y.push(b[i]);
+          }
+        });
+        if (x.length < 3) return NaN;
+        const mx = mean(x),
+          my = mean(y),
+          sx = Math.sqrt(sum(x.map((v) => (v - mx) ** 2))),
+          sy = Math.sqrt(sum(y.map((v) => (v - my) ** 2)));
+        return sx && sy
+          ? sum(x.map((v, i) => (v - mx) * (y[i] - my))) / (sx * sy)
+          : NaN;
+      };
+      const lab = (s) => String(s).replace(/_/g, " "),
+        esc = (s) =>
+          String(s).replace(
+            /[&<>"]/g,
+            (c) =>
+              ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+          ),
+        short = (s, n = 15) => (s.length > n ? s.slice(0, n - 1) + "~" : s);
+      /* ---------- aljabar matriks dan distribusi ---------- */
+      const T = (A) => A[0].map((_, j) => A.map((r) => r[j]));
+      const mm = (A, B) =>
+        A.map((r) =>
+          B[0].map((_, j) => r.reduce((s, v, k) => s + v * B[k][j], 0)),
+        );
+      function inv(M) {
+        const n = M.length,
+          d0 = M.map((r, i) => Math.abs(r[i])),
+          A = M.map((r, i) => [
+            ...r,
+            ...Array.from({ length: n }, (_, j) => +(i == j)),
+          ]);
+        for (let i = 0; i < n; i++) {
+          let p = i;
+          for (let r = i + 1; r < n; r++)
+            if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+          if (!isFinite(A[p][i]) || Math.abs(A[p][i]) < 1e-10 * d0[i])
+            throw new Error("SINGULAR");
+          [A[i], A[p]] = [A[p], A[i]];
+          const d = A[i][i];
+          for (let j = 0; j < 2 * n; j++) A[i][j] /= d;
+          for (let r = 0; r < n; r++)
+            if (r != i) {
+              const f = A[r][i];
+              for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[i][j];
+            }
+        }
+        return A.map((r) => r.slice(n));
+      }
+      function lg(x) {
+        const c = [
+          76.18009172947146, -86.50532032941677, 24.01409824083091,
+          -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
+        ];
+        let y = x,
+          t = x + 5.5;
+        t -= (x + 0.5) * Math.log(t);
+        let s = 1.000000000190015;
+        for (const q of c) s += q / ++y;
+        return -t + Math.log((2.5066282746310005 * s) / x);
+      }
+      function bc(x, a, b) {
+        const tn = 1e-30,
+          qab = a + b,
+          qap = a + 1,
+          qam = a - 1;
+        let c = 1,
+          d = 1 - (qab * x) / qap;
+        if (Math.abs(d) < tn) d = tn;
+        d = 1 / d;
+        let h = d;
+        for (let m = 1; m < 300; m++) {
+          const m2 = 2 * m;
+          let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+          d = 1 + aa * d;
+          if (Math.abs(d) < tn) d = tn;
+          c = 1 + aa / c;
+          if (Math.abs(c) < tn) c = tn;
+          d = 1 / d;
+          h *= d * c;
+          aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+          d = 1 + aa * d;
+          if (Math.abs(d) < tn) d = tn;
+          c = 1 + aa / c;
+          if (Math.abs(c) < tn) c = tn;
+          d = 1 / d;
+          const e = d * c;
+          h *= e;
+          if (Math.abs(e - 1) < 3e-10) break;
+        }
+        return h;
+      }
+      function ib(x, a, b) {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        const bt = Math.exp(
+          lg(a + b) - lg(a) - lg(b) + a * Math.log(x) + b * Math.log(1 - x),
+        );
+        return x < (a + 1) / (a + b + 2)
+          ? (bt * bc(x, a, b)) / a
+          : 1 - (bt * bc(1 - x, b, a)) / b;
+      }
+      const pT = (t, df) => ib(df / (df + t * t), df / 2, 0.5),
+        pFd = (F, d1, d2) => ib(d2 / (d2 + d1 * F), d2 / 2, d1 / 2);
+      const cdf = (z) => {
+        const t = 1 / (1 + 0.2316419 * Math.abs(z)),
+          p =
+            0.3989423 *
+            Math.exp((-z * z) / 2) *
+            t *
+            (0.3193815 +
+              t *
+                (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+        return z > 0 ? 1 - p : p;
+      };
+      function ols(yv, cols) {
+        const n = yv.length,
+          k = cols.length + 1,
+          df = n - k;
+        const X = yv.map((_, i) => [1, ...cols.map((c) => c[i])]),
+          y = yv.map((v) => [v]);
+        const Xt = T(X),
+          XtX = mm(Xt, X),
+          Xty = mm(Xt, y),
+          I = inv(XtX),
+          b = mm(I, Xty).map((r) => r[0]);
+        const yh = X.map((r) => sum(r.map((v, j) => v * b[j]))),
+          res = yv.map((v, i) => v - yh[i]);
+        const ym = mean(yv),
+          sse = sum(res.map((e) => e * e)),
+          sst = sum(yv.map((v) => (v - ym) ** 2)),
+          ssr = sst - sse,
+          mse = sse / df;
+        const se = I.map((r, i) => Math.sqrt(mse * r[i])),
+          t = b.map((v, i) => v / se[i]),
+          p = t.map((v) => pT(v, df));
+        const r2 = ssr / sst,
+          F = ssr / (k - 1) / mse;
+        return {
+          k,
+          df,
+          n,
+          X,
+          y,
+          XtX,
+          Xty,
+          I,
+          b,
+          yh,
+          res,
+          sse,
+          sst,
+          ssr,
+          mse,
+          se,
+          t,
+          p,
+          r2,
+          adj: 1 - ((1 - r2) * (n - 1)) / df,
+          F,
+          pF: pFd(F, k - 1, df),
+        };
+      }
+      /* ---------- format ---------- */
+      const f = (v, d = 3) =>
+        !isFinite(v)
+          ? "-"
+          : Math.abs(v) >= 1e5 || (v !== 0 && Math.abs(v) < 1e-3)
+            ? v.toExponential(2)
+            : v.toFixed(d);
+      const fp = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
+      function ticks(lo, hi, n = 5) {
+        const s = (hi - lo || 1) / n,
+          m = 10 ** Math.floor(Math.log10(s)),
+          q = s / m,
+          st = (q < 1.5 ? 1 : q < 3 ? 2 : q < 7 ? 5 : 10) * m,
+          r = [];
+        for (let v = Math.floor(lo / st) * st; v <= hi + st * 0.5; v += st)
+          r.push(+v.toFixed(10));
+        return r;
+      }
+      const tl = (v) => String(+v.toFixed(3));
+      function scatter(o) {
+        const W = 560,
+          H = 340,
+          L = 60,
+          R = 14,
+          Tp = 14,
+          B = 44,
+          tx = ticks(Math.min(...o.xs), Math.max(...o.xs)),
+          ty = ticks(Math.min(...o.ys), Math.max(...o.ys)),
+          x0 = tx[0],
+          x1 = tx.at(-1),
+          y0 = ty[0],
+          y1 = ty.at(-1);
+        const X = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R),
+          Y = (v) => H - B - ((v - y0) / (y1 - y0 || 1)) * (H - B - Tp);
+        let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.yl)} terhadap ${esc(o.xl)}"><clipPath id="${o.id}"><rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - B - Tp}"/></clipPath>`;
+        ty.forEach(
+          (v) =>
+            (s += `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tk" x="${L - 6}" y="${Y(v) + 5}" text-anchor="end">${tl(v)}</text>`),
+        );
+        tx.forEach(
+          (v) =>
+            (s += `<text class="tk" x="${X(v)}" y="${H - B + 18}" text-anchor="middle">${tl(v)}</text>`),
+        );
+        s += `<text class="ax" x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">${esc(short(o.xl, 28))}</text><text class="ax" transform="translate(14 ${(Tp + H - B) / 2}) rotate(-90)" text-anchor="middle">${esc(short(o.yl, 22))}</text><g clip-path="url(#${o.id})">`;
+        (o.lines || []).forEach(
+          (l) =>
+            (s += `<line class="${l[4]}" x1="${X(l[0])}" y1="${Y(l[1])}" x2="${X(l[2])}" y2="${Y(l[3])}"/>`),
+        );
+        o.xs.forEach(
+          (v, i) =>
+            (s += `<circle class="pt ${o.cls ? o.cls[i] : "a"}" cx="${X(v)}" cy="${Y(o.ys[i])}" r="5" data-t="${esc(o.tips[i])}"/>`),
+        );
+        return s + "</g></svg>";
+      }
+      const tbl = (Mx, rl, cl, d = 2) =>
+        `<div class="sc"><table class="mx"><tr><th></th>${cl.map((c) => `<th>${esc(c)}</th>`).join("")}</tr>${Mx.map((r, i) => `<tr><th style="text-align:left">${esc(rl[i])}</th>${r.map((v) => `<td>${f(v, d)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+      /* ---------- membaca file ---------- */
+      const LIBS = {};
+      const lib = (src) =>
+        LIBS[src] ||
+        (LIBS[src] = new Promise((ok, no) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.onload = ok;
+          s.onerror = () => no(new Error("LIB:" + src));
+          document.head.appendChild(s);
+        }));
+      function parseDelim(text) {
+        text = text.replace(/^\uFEFF/, "");
+        const first = text.split(/\r?\n/).find((l) => l.trim()) || "";
+        const d = ["\t", ";", ",", "|"]
+            .map((c) => [c, first.split(c).length])
+            .sort((a, b) => b[1] - a[1])[0][0],
+          rows = [];
+        let r = [],
+          c = "",
+          q = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (q) {
+            if (ch === '"') {
+              if (text[i + 1] === '"') {
+                c += '"';
+                i++;
+              } else q = false;
+            } else c += ch;
+          } else if (ch === '"') q = true;
+          else if (ch === d) {
+            r.push(c);
+            c = "";
+          } else if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && text[i + 1] === "\n") i++;
+            r.push(c);
+            rows.push(r);
+            r = [];
+            c = "";
+          } else c += ch;
+        }
+        if (c !== "" || r.length) {
+          r.push(c);
+          rows.push(r);
+        }
+        return rows;
+      }
+      function toNum(v) {
+        if (typeof v === "number") return v;
+        let s = String(v).trim().replace(/%$/, "").replace(/\s/g, "");
+        if (s === "") return NaN;
+        if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s))
+          s = s.replace(/\./g, "").replace(",", ".");
+        else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))
+          s = s.replace(/,/g, "");
+        else if (/^-?\d+,\d+$/.test(s)) s = s.replace(",", ".");
+        return /^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)
+          ? Number(s)
+          : NaN;
+      }
+      async function parsePDF(buf) {
+        await lib("lib/pdf.min.js");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "lib/pdf.worker.min.js";
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) })
+            .promise,
+          rows = [];
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const tc = await (await pdf.getPage(p)).getTextContent();
+          const its = tc.items
+              .filter((i) => i.str.trim() !== "")
+              .map((i) => ({
+                s: i.str.trim(),
+                x: i.transform[4],
+                y: i.transform[5],
+                w: i.width,
+                h: Math.abs(i.transform[3]) || 10,
+              }))
+              .sort((a, b) => b.y - a.y || a.x - b.x),
+            lines = [];
+          for (const it of its) {
+            const L = lines.find(
+              (l) => Math.abs(l.y - it.y) < Math.max(2, it.h * 0.4),
+            );
+            L ? L.it.push(it) : lines.push({ y: it.y, it: [it] });
+          }
+          lines.forEach((L) => {
+            L.it.sort((a, b) => a.x - b.x);
+            const cells = [];
+            let pv = null;
+            for (const it of L.it) {
+              if (pv && it.x - (pv.x + pv.w) < it.h * 0.5)
+                cells[cells.length - 1] += " " + it.s;
+              else cells.push(it.s);
+              pv = it;
+            }
+            rows.push(cells);
+          });
+        }
+        const cnt = {};
+        rows
+          .filter((r) => r.length >= 2)
+          .forEach((r) => (cnt[r.length] = (cnt[r.length] || 0) + 1));
+        const w = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+        if (!w)
+          throw new Error(
+            "Tidak ada tabel yang terbaca di PDF ini. PDF hasil scan atau foto tidak bisa dibaca; gunakan PDF yang teksnya bisa diseleksi.",
+          );
+        const keep = rows.filter((r) => r.length === w),
+          h = keep[0].join("|");
+        const out = keep.filter((r, i) => i === 0 || r.join("|") !== h);
+        PDFNOTE = `PDF dibaca otomatis: ${out.length - 1} baris data dari ${rows.length} baris teks (${rows.length - keep.length} baris lain dilewati karena bentuknya bukan tabel). Periksa pratinjau di bawah.`;
+        return out;
+      }
+      function buildDS(tb, name) {
+        tb = tb.filter((r) => r.some((c) => String(c ?? "").trim() !== ""));
+        if (tb.length < 4)
+          throw new Error(
+            "Data terlalu sedikit. Butuh nama kolom di baris pertama dan minimal 3 baris data.",
+          );
+        const w = Math.max(...tb.map((r) => r.length)),
+          seen = {},
+          hdr = Array.from({ length: w }, (_, i) => {
+            let h = String(tb[0][i] ?? "").trim() || "Kolom " + (i + 1);
+            if (seen[h]) {
+              seen[h]++;
+              h += " " + seen[h];
+            } else seen[h] = 1;
+            return h;
+          });
+        const body = tb.slice(1),
+          n = body.length,
+          cols = {},
+          info = [];
+        hdr.forEach((h, j) => {
+          const s = body.map((r) => (r[j] == null ? "" : String(r[j]).trim())),
+            ne = s.filter((v) => v !== ""),
+            nums = s.map(toNum),
+            nn = nums.filter((v) => !isNaN(v)).length,
+            u = [...new Set(ne)];
+          let type = "skip";
+          if (ne.length >= 3 && nn / ne.length >= 0.9 && u.length > 1)
+            type = "num";
+          else if (ne.length >= 3 && u.length >= 2 && u.length <= 6)
+            type = "cat";
+          const idlike =
+            /(^|[\s_\-.])(id|no|nim|nis|nomor|index|idx|urut)($|[\s_\-.])/i.test(
+              h,
+            ) ||
+            (type === "num" &&
+              n >= 10 &&
+              u.length === n &&
+              nums.every((v, i) => i === 0 || v - nums[i - 1] === 1));
+          cols[h] = type === "num" ? nums : s;
+          info.push({ name: h, type, idlike, uniq: u.length });
+        });
+        if (
+          info.filter((c) => c.type === "num").length < 1 ||
+          info.filter((c) => c.type !== "skip").length < 2
+        )
+          throw new Error(
+            "Butuh minimal 1 kolom angka sebagai hasil yang diprediksi dan 1 kolom lain sebagai faktor. Pastikan baris pertama berisi nama kolom.",
+          );
+        return {
+          name,
+          n,
+          hdr,
+          cols,
+          info,
+          preview: [hdr, ...body.map((r) => hdr.map((_, j) => r[j] ?? ""))],
+        };
+      }
+      /* ---------- status dan pemuatan ---------- */
+      let DS = null,
+        CFG = {},
+        M = null,
+        SIM = {},
+        WB = null,
+        PDFNOTE = "";
+      const msg = (t, bad) => {
+        const e = $("#st");
+        e.textContent = t;
+        e.className = "st" + (bad ? " bad" : "");
+      };
+      function loadTable(tb, name, note) {
+        DS = buildDS(tb, name);
+        const cand = DS.info.filter((c) => c.type === "num" && !c.idlike),
+          m = cand.find((c) =>
+            /(score|nilai|ipk|gpa|grade|skor|hasil|target|result|exam|ujian|prestasi)/i.test(
+              c.name,
+            ),
+          );
+        CFG.y = (
+          m ||
+          cand.at(-1) ||
+          DS.info.find((c) => c.type === "num")
+        ).name;
+        CFG.use = new Set(
+          DS.info
+            .filter((c) => c.type !== "skip" && !c.idlike && c.name !== CFG.y)
+            .map((c) => c.name),
+        );
+        msg(
+          `Data terbaca: ${name}, ${DS.n} baris, ${DS.hdr.length} kolom.${note ? " " + note : ""}`,
+        );
+        drawData();
+        run();
+      }
+      async function onFile(file) {
+        try {
+          const ext = file.name.split(".").pop().toLowerCase();
+          let tb,
+            note = "";
+          PDFNOTE = "";
+          $("#sheet").hidden = true;
+          if (["xlsx", "xls", "ods"].includes(ext)) {
+            await lib("lib/xlsx.full.min.js");
+            WB = XLSX.read(await file.arrayBuffer(), { type: "array" });
+            const sh = $("#sheet"),
+              multi = WB.SheetNames.length > 1;
+            let pick = null;
+            for (const s of WB.SheetNames) {
+              try {
+                const x = sheetRows(s);
+                buildDS(x, "x");
+                tb = x;
+                pick = s;
+                break;
+              } catch (e) {}
+            }
+            if (!tb)
+              throw new Error(
+                "Tidak ada sheet yang berisi tabel data yang valid. Baris pertama harus berisi nama kolom.",
+              );
+            if (multi) {
+              sh.innerHTML = WB.SheetNames.map(
+                (n) => `<option>${esc(n)}</option>`,
+              ).join("");
+              sh.value = pick;
+              sh.hidden = false;
+              file = { name: file.name + " [" + pick + "]" };
+            }
+          } else if (ext === "pdf") {
+            tb = await parsePDF(await file.arrayBuffer());
+            note = PDFNOTE;
+          } else tb = parseDelim(await file.text());
+          loadTable(tb, file.name, note);
+        } catch (e) {
+          msg(
+            e.message.startsWith("LIB:")
+              ? "File pendukung di folder lib/ tidak ditemukan. Pastikan seluruh folder ikut di-upload ke hosting."
+              : "Gagal membaca file: " + e.message,
+            true,
+          );
+        }
+      }
+      const sheetRows = (n) =>
+        XLSX.utils.sheet_to_json(WB.Sheets[n], {
+          header: 1,
+          raw: true,
+          defval: "",
+        });
+      $("#sheet").onchange = (e) => {
+        try {
+          loadTable(
+            sheetRows(e.target.value),
+            DS.name.split(" [")[0] + " [" + e.target.value + "]",
+          );
+        } catch (x) {
+          msg(x.message, true);
+        }
+      };
+      $("#f").onchange = (e) => {
+        if (e.target.files[0]) onFile(e.target.files[0]);
+        e.target.value = "";
+      };
+      const dz = $("#dz");
+      ["dragover", "dragenter"].forEach((v) =>
+        dz.addEventListener(v, (e) => {
+          e.preventDefault();
+          dz.classList.add("over");
+        }),
+      );
+      ["dragleave", "drop"].forEach((v) =>
+        dz.addEventListener(v, (e) => {
+          e.preventDefault();
+          dz.classList.remove("over");
+        }),
+      );
+      dz.addEventListener("drop", (e) => {
+        if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+      });
+      $("#tp").onclick = () => {
+        $("#paste").hidden = !$("#paste").hidden;
+        $("#pb2").hidden = $("#paste").hidden;
+      };
+      $("#pb2").onclick = () => {
+        try {
+          loadTable(parseDelim($("#paste").value), "data tempelan");
+        } catch (e) {
+          msg(e.message, true);
+        }
+      };
+      $("#sm").onclick = () => {
+        $("#sheet").hidden = true;
+        loadTable(parseDelim(SAMPLE), "data_uji.pdf (data bawaan)");
+      };
+      /* ---------- panel data ---------- */
+      const TY = { num: "angka", cat: "kategori", skip: "diabaikan" };
+      function drawData() {
+        const p = DS.preview,
+          rs = DS.showAll ? p.slice(1) : p.slice(1, 7);
+        $("#pv").innerHTML =
+          "<table><tr>" +
+          DS.info
+            .map(
+              (c) =>
+                `<th>${esc(c.name)}<br><small class="tg">${c.idlike ? "ID" : TY[c.type]}</small></th>`,
+            )
+            .join("") +
+          "</tr>" +
+          rs
+            .map(
+              (r) =>
+                "<tr>" + r.map((v) => `<td>${esc(v)}</td>`).join("") + "</tr>",
+            )
+            .join("") +
+          "</table>";
+        $("#pvn").textContent =
+          `Menampilkan ${rs.length} dari ${DS.n} baris. Semua ${DS.n} baris ikut dihitung.`;
+        $("#pvb").hidden = DS.n <= 6;
+        $("#pvb").textContent = DS.showAll
+          ? "Tampilkan 6 baris saja"
+          : "Tampilkan semua baris";
+        $("#pv").style.maxHeight = DS.showAll ? "440px" : "";
+        const nums = DS.info.filter((c) => c.type === "num" && !c.idlike);
+        $("#ysel").innerHTML = nums
+          .map(
+            (c) =>
+              `<option value="${esc(c.name)}">${esc(lab(c.name))}</option>`,
+          )
+          .join("");
+        $("#ysel").value = CFG.y;
+        drawChips();
+        const sk = DS.info.filter((c) => c.type === "skip").map((c) => c.name);
+        $("#ign").textContent = sk.length
+          ? "Kolom teks yang diabaikan (terlalu banyak variasi): " +
+            sk.join(", ") +
+            "."
+          : "";
+      }
+      function drawChips() {
+        $("#chips").innerHTML = DS.info
+          .filter((c) => c.type !== "skip" && c.name !== CFG.y)
+          .map(
+            (c) =>
+              `<label class="chip" title="${TY[c.type]}"><input type="checkbox" value="${esc(c.name)}" ${CFG.use.has(c.name) ? "checked" : ""}>${esc(lab(c.name))}${c.type === "cat" ? " <small>(kategori)</small>" : ""}</label>`,
+          )
+          .join("");
+      }
+      $("#pvb").onclick = () => {
+        DS.showAll = !DS.showAll;
+        drawData();
+      };
+      $("#ysel").onchange = (e) => {
+        CFG.y = e.target.value;
+        CFG.use.delete(CFG.y);
+        DS.info.forEach((c) => {
+          if (
+            c.type !== "skip" &&
+            !c.idlike &&
+            c.name !== CFG.y &&
+            !CFG.use.has(c.name) &&
+            c._off !== 1
+          )
+            CFG.use.add(c.name);
+        });
+        drawChips();
+        run();
+      };
+      $("#chips").onchange = (e) => {
+        const k = e.target.value,
+          c = DS.info.find((x) => x.name === k);
+        if (e.target.checked) {
+          CFG.use.add(k);
+          c._off = 0;
+        } else {
+          CFG.use.delete(k);
+          c._off = 1;
+        }
+        run();
+      };
+      /* ---------- perhitungan ---------- */
+      function compute() {
+        const yn = CFG.y,
+          yc = DS.cols[yn],
+          sel = DS.info.filter((c) => CFG.use.has(c.name) && c.name !== yn),
+          idx = [];
+        for (let i = 0; i < DS.n; i++) {
+          if (isNaN(yc[i])) continue;
+          if (
+            sel.every((c) =>
+              c.type === "num"
+                ? !isNaN(DS.cols[c.name][i])
+                : DS.cols[c.name][i] !== "",
+            )
+          )
+            idx.push(i);
+        }
+        const warns = [],
+          terms = [];
+        sel.forEach((c) => {
+          const v = idx.map((i) => DS.cols[c.name][i]);
+          if (c.type === "num") {
+            if (v.length < 2 || sd(v) === 0)
+              warns.push(`${c.name}: nilainya sama semua, dilewati.`);
+            else
+              terms.push({ name: c.name, col: c.name, kind: "num", vals: v });
+          } else {
+            const cn = {};
+            v.forEach((x) => (cn[x] = (cn[x] || 0) + 1));
+            const lv = Object.keys(cn).sort((a, b) => cn[b] - cn[a]);
+            if (lv.length < 2)
+              warns.push(`${c.name}: hanya satu kategori, dilewati.`);
+            else
+              lv.slice(1).forEach((l) =>
+                terms.push({
+                  name: `${c.name}=${l}`,
+                  col: c.name,
+                  kind: "cat",
+                  level: l,
+                  base: lv[0],
+                  vals: v.map((x) => +(x === l)),
+                }),
+              );
+          }
+        });
+        if (!terms.length)
+          throw new Error(
+            "Pilih minimal satu faktor yang nilainya bervariasi.",
+          );
+        const y = idx.map((i) => yc[i]);
+        if (y.length < 3 || sd(y) === 0)
+          throw new Error(
+            `Nilai ${yn} kosong atau sama semua, tidak ada yang bisa dihitung.`,
+          );
+        if (y.length <= terms.length + 2)
+          throw new Error(
+            `Data lengkap hanya ${y.length} baris, terlalu sedikit untuk ${terms.length} faktor. Kurangi faktor atau lengkapi data yang kosong.`,
+          );
+        let m;
+        try {
+          m = ols(
+            y,
+            terms.map((t) => t.vals),
+          );
+        } catch (e) {
+          if (e.message === "SINGULAR")
+            throw new Error(
+              "Ada faktor yang kembar atau bisa dihitung persis dari faktor lain (misalnya total = A + B). Cabut salah satunya di daftar faktor.",
+            );
+          throw e;
+        }
+        const vif = terms.map((t, i) => {
+          if (terms.length < 2) return 1;
+          try {
+            return (
+              1 /
+              (1 -
+                ols(
+                  t.vals,
+                  terms.filter((_, j) => j !== i).map((u) => u.vals),
+                ).r2)
+            );
+          } catch (e) {
+            return Infinity;
+          }
+        });
+        return {
+          yn,
+          idx,
+          y,
+          terms,
+          m,
+          vif,
+          beta: terms.map((t, i) => (m.b[i + 1] * sd(t.vals)) / sd(y)),
+          warns,
+          skippedRows: DS.n - idx.length,
+        };
+      }
+      function run() {
+        try {
+          M = compute();
+          $("#err").hidden = true;
+          $("#out").hidden = false;
+          renderAll();
+        } catch (e) {
+          M = null;
+          $("#out").hidden = true;
+          $("#err").hidden = false;
+          $("#err").innerHTML =
+            "<h3>Belum bisa dihitung</h3><p>" + esc(e.message) + "</p>";
+        }
+      }
+      const rowLab = (i) => {
+        const id = DS.info.find((c) => c.idlike && c.type === "num");
+        return id
+          ? `${lab(id.name)} ${DS.cols[id.name][i]}`
+          : "Baris " + (i + 1);
+      };
+      /* ---------- tampilan hasil ---------- */
+      function renderAll() {
+        const { yn, terms, m, vif, beta, y } = M,
+          nm = ["Intersep", ...terms.map((t) => t.name)],
+          Y = lab(yn);
+        document.title = "Dashboard: apa yang memengaruhi " + Y;
+        $("#h1").textContent = "Apa yang memengaruhi " + Y + "?";
+        $("#wn").innerHTML =
+          (M.skippedRows
+            ? `${y.length} dari ${DS.n} baris dipakai (${M.skippedRows} baris dilewati karena ada data kosong). `
+            : `Semua ${y.length} baris dipakai. `) + M.warns.join(" ");
+        $("#kpi").innerHTML =
+          `<span>R² <b>${m.r2.toFixed(4)}</b></span><span>Adj. R² <b>${m.adj.toFixed(4)}</b></span><span>F <b>${m.F.toFixed(1)}</b> (p ${fp(m.pF)})</span><span>RMSE <b>${f(Math.sqrt(m.sse / m.n), 2)}</b></span><span>n <b>${m.n}</b>, df sisaan <b>${m.df}</b></span>`;
+        /* batang beta */
+        const it = terms
+            .map((t, i) => ({ n: t.name, b: beta[i], p: m.p[i + 1] }))
+            .sort((a, b) => Math.abs(b.b) - Math.abs(a.b)),
+          W = 560,
+          rh = 30,
+          Lb = 170,
+          mid = Lb + (W - Lb - 20) / 2,
+          mx = Math.max(...it.map((i) => Math.abs(i.b)), 0.05),
+          sc = ((W - Lb - 20) / 2 / mx) * 0.7;
+        let s = `<svg viewBox="0 0 ${W} ${it.length * rh + 12}" role="img" aria-label="Beta standar"><line class="zero" x1="${mid}" x2="${mid}" y1="2" y2="${it.length * rh + 8}"/>`;
+        it.forEach((o, i) => {
+          const yy = 6 + i * rh,
+            w = Math.abs(o.b) * sc,
+            pos = o.b >= 0;
+          s += `<text class="ax" x="${Lb - 8}" y="${yy + 19}" text-anchor="end">${esc(short(lab(o.n), 16))}<title>${esc(o.n)}</title></text><rect x="${pos ? mid : mid - w}" y="${yy + 5}" width="${w}" height="18" rx="4" class="${pos ? "pos" : "neg"}" opacity="${o.p < 0.05 ? 1 : 0.35}"/><text class="tk" x="${pos ? mid + w + 5 : mid - w - 5}" y="${yy + 19}" text-anchor="${pos ? "start" : "end"}">${o.b.toFixed(2)}${o.p < 0.05 ? "" : "*"}</text>`;
+        });
+        $("#bars").innerHTML = s + "</svg>";
+        /* pembacaan */
+        const sig = it.filter((o) => o.p < 0.05),
+          ns = it.filter((o) => o.p >= 0.05),
+          mv = Math.max(...vif),
+          pc = terms.map((t) => pcorr(t.vals, y)),
+          bi = pc.reduce(
+            (a, v, i) => (Math.abs(v) > Math.abs(pc[a]) ? i : a),
+            0,
+          );
+        $("#read").innerHTML =
+          `<li>Model menjelaskan <b>${(m.r2 * 100).toFixed(1)}%</b> variasi ${esc(Y)}.${m.r2 < 0.3 ? " Angka ini rendah, artinya faktor yang dipilih belum cukup menjelaskan hasilnya." : ""}</li>` +
+          (sig.length
+            ? `<li>Berpengaruh nyata (p &lt; 0.05, faktor lain dikontrol): ${sig.map((o) => `<b>${esc(lab(o.n))}</b> (${o.b > 0 ? "naik" : "turun"})`).join(", ")}.</li>`
+            : "<li>Tidak ada faktor yang berpengaruh nyata pada taraf 5%.</li>") +
+          (ns.length
+            ? `<li>Belum meyakinkan: ${ns.map((o) => esc(lab(o.n))).join(", ")}.</li>`
+            : "") +
+          `<li>Pengaruh relatif terbesar: <b>${esc(lab(it[0].n))}</b> (beta ${it[0].b.toFixed(2)}).</li><li>Korelasi sederhana terkuat dengan ${esc(Y)}: <b>${esc(lab(terms[bi].name))}</b> (r = ${pc[bi].toFixed(2)}).</li>` +
+          (mv > 10
+            ? `<li><b>Waspada multikolinearitas.</b> VIF tertinggi ${isFinite(mv) ? mv.toFixed(0) : "sangat besar"} (batas umum 10). Faktor saling berkorelasi kuat, jadi koefisien tiap faktor kurang stabil. Coba cabut beberapa faktor dan lihat perubahannya.</li>`
+            : `<li>VIF tertinggi ${mv.toFixed(1)}, multikolinearitas masih aman.</li>`) +
+          `<li>Ini hubungan statistik pada data yang ada, bukan bukti sebab-akibat.</li>`;
+        $("#coef").innerHTML =
+          `<table><tr><th>Faktor</th><th>Koefisien b</th><th>Std. error</th><th>t</th><th>p-value</th><th>Beta standar</th><th>VIF</th></tr>` +
+          nm
+            .map(
+              (n, i) =>
+                `<tr class="${m.p[i] < 0.05 ? "" : "ns"}"><td>${esc(n)}</td><td>${f(m.b[i], 4)}</td><td>${f(m.se[i], 4)}</td><td>${m.t[i].toFixed(2)}</td><td>${fp(m.p[i])}</td><td>${i ? beta[i - 1].toFixed(3) : "-"}</td><td>${i ? (isFinite(vif[i - 1]) ? vif[i - 1].toFixed(1) : "tak hingga") : "-"}</td></tr>`,
+            )
+            .join("") +
+          "</table>";
+        const tips = M.idx.map(
+            (r, i) =>
+              `${rowLab(r)}: aktual ${f(y[i], 2)}, prediksi ${f(m.yh[i], 2)}`,
+          ),
+          mn = Math.min(...y, ...m.yh),
+          mxv = Math.max(...y, ...m.yh);
+        $("#avp").innerHTML = scatter({
+          id: "c1",
+          xs: m.yh,
+          ys: y,
+          xl: "Prediksi",
+          yl: "Aktual",
+          tips,
+          lines: [[mn, mn, mxv, mxv, "ln d"]],
+        });
+        $("#rvf").innerHTML = scatter({
+          id: "c2",
+          xs: m.yh,
+          ys: m.res,
+          xl: "Prediksi",
+          yl: "Residual",
+          tips: tips.map((t, i) => t + `, residual ${f(m.res[i], 2)}`),
+          lines: [[Math.min(...m.yh), 0, Math.max(...m.yh), 0, "ln d"]],
+        });
+        /* langkah */
+        const k = m.k,
+          sh = nm.map((n) => short(n, 9)),
+          eq =
+            esc(yn) +
+            " = " +
+            f(m.b[0], 3) +
+            terms
+              .map(
+                (t, i) =>
+                  (m.b[i + 1] < 0 ? " - " : " + ") +
+                  f(Math.abs(m.b[i + 1]), 4) +
+                  " × " +
+                  esc(t.name),
+              )
+              .join("");
+        $("#steps").innerHTML =
+          `<details open><summary>Langkah 1. Susun matriks X dan vektor y</summary><p>Setiap baris adalah satu data. Kolom pertama bernilai 1 untuk intersep. Kolom kategori diubah jadi angka 0 atau 1 (dummy) terhadap kategori pembanding. Di bawah hanya 5 dari ${m.n} baris pertama; ukuran penuh X adalah ${m.n} × ${k}.</p>${tbl(
+            m.X.slice(0, 5),
+            m.X.slice(0, 5).map((_, i) => "Baris " + (i + 1)),
+            nm,
+            2,
+          )}<p>Vektor y (${esc(yn)}) untuk 5 baris itu: ${y
+            .slice(0, 5)
+            .map((v) => f(v, 2))
+            .join(
+              ", ",
+            )}, ...</p>${terms.some((t) => t.kind === "cat") ? "<p>Pembanding kategori: " + [...new Set(terms.filter((t) => t.kind === "cat").map((t) => `${esc(t.col)} = ${esc(t.base)}`))].join(", ") + ".</p>" : ""}</details>` +
+          `<details><summary>Langkah 2. Hitung XᵀX (${k} × ${k})</summary><p>Mengalikan transpose X dengan X merangkum jumlah kuadrat dan jumlah perkalian antar faktor.</p>${tbl(m.XtX, nm, sh, 1)}</details>` +
+          `<details><summary>Langkah 3. Hitung Xᵀy (${k} × 1)</summary><p>Jumlah perkalian tiap faktor dengan ${esc(yn)}.</p>${tbl(m.Xty, nm, ["Xᵀy"], 1)}</details>` +
+          `<details><summary>Langkah 4. Invers matriks (XᵀX)⁻¹</summary><p>Dihitung dengan eliminasi Gauss-Jordan. Diagonalnya dipakai untuk standard error.</p>${tbl(m.I, nm, sh, 5)}</details>` +
+          `<details><summary>Langkah 5. Koefisien b = (XᵀX)⁻¹ Xᵀy</summary><p>Hasil perkalian invers dengan Xᵀy adalah koefisien regresi.</p>${tbl(
+            m.b.map((v) => [v]),
+            nm,
+            ["b"],
+            4,
+          )}<div class="eq"><code>${eq}</code></div></details>` +
+          `<details><summary>Langkah 6. Jumlah kuadrat dan R²</summary><p>Prediksi ŷ = Xb, residual e = y − ŷ.</p>${tbl([[m.sst, m.ssr, m.sse]], ["Nilai"], ["SST (total)", "SSR (dijelaskan)", "SSE (sisaan)"], 2)}<p>R² = SSR / SST = ${f(m.ssr, 2)} / ${f(m.sst, 2)} = <b>${m.r2.toFixed(4)}</b>. Adj. R² = 1 − (1 − R²)(n − 1)/(n − k) = <b>${m.adj.toFixed(4)}</b>.</p></details>` +
+          `<details><summary>Langkah 7. Standard error, uji t, dan p-value</summary><p>MSE = SSE / (n − k) = ${f(m.sse, 2)} / ${m.df} = <b>${f(m.mse, 3)}</b>. SE = √(MSE × diagonal (XᵀX)⁻¹), t = b / SE, lalu p-value dari distribusi t dengan df = ${m.df}. Hasilnya ada di tabel koefisien.</p></details>` +
+          `<details><summary>Langkah 8. Uji F menyeluruh dan VIF</summary><p>F = (SSR / ${k - 1}) / MSE = <b>${m.F.toFixed(2)}</b>, p ${fp(m.pF)}. Menguji apakah minimal satu faktor berpengaruh.</p><p>VIF = 1 / (1 − R²j), dengan R²j dari regresi faktor itu terhadap faktor lain: ${terms.map((t, i) => esc(t.name) + " " + (isFinite(vif[i]) ? vif[i].toFixed(1) : "tak hingga")).join(", ")}.</p></details>`;
+        /* regresi tunggal */
+        const sr = terms
+          .map((t, i) => {
+            const r = pc[i],
+              n = m.n,
+              b1 = (r * sd(y)) / sd(t.vals),
+              tt = r * Math.sqrt((n - 2) / (1 - r * r || 1e-12));
+            return {
+              t,
+              r,
+              r2: r * r,
+              b1,
+              ic: mean(y) - b1 * mean(t.vals),
+              p: pT(tt, n - 2),
+            };
+          })
+          .sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+        $("#single").innerHTML =
+          "<table><tr><th>Faktor</th><th>Korelasi r</th><th></th><th>R²</th><th>Kemiringan</th><th>Intersep</th><th>p-value</th><th>Arti</th></tr>" +
+          sr
+            .map((o) => {
+              const a = Math.abs(o.r);
+              return `<tr class="${o.t.kind === "num" ? "clk" : ""} ${o.p < 0.05 ? "" : "ns"}" data-c="${o.t.kind === "num" ? esc(o.t.col) : ""}"><td>${esc(o.t.name)}</td><td>${o.r.toFixed(3)}</td><td style="width:110px"><div class="tr"><i class="${o.r >= 0 ? "up" : "dn"}" style="width:${a * 50}%"></i></div></td><td>${o.r2.toFixed(3)}</td><td>${f(o.b1, 4)}</td><td>${f(o.ic, 3)}</td><td>${fp(o.p)}</td><td>${a >= 0.8 ? "sangat kuat" : a >= 0.6 ? "kuat" : a >= 0.4 ? "sedang" : a >= 0.2 ? "lemah" : "hampir tak ada"} ${o.r >= 0 ? "positif" : "negatif"}</td></tr>`;
+            })
+            .join("") +
+          "</table>";
+        $("#sy").textContent = Y;
+        simInit();
+        expInit();
+      }
+      $("#single").onclick = (e) => {
+        const r = e.target.closest("tr.clk");
+        if (r && r.dataset.c) {
+          $("#sx").value = r.dataset.c;
+          $("#sy2").value = CFG.y;
+          explore();
+          $("#sp").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+      /* ---------- simulasi ---------- */
+      const stepOf = (v) => {
+        const lo = Math.min(...v),
+          hi = Math.max(...v),
+          int = v.every(Number.isInteger);
+        let s = (hi - lo) / (int ? 50 : 20);
+        s = 10 ** Math.floor(Math.log10(s || 1));
+        return int ? Math.max(1, s) : s;
+      };
+      const decOf = (st) => Math.max(0, -Math.floor(Math.log10(st) + 1e-9));
+      function simInit() {
+        const { terms, y, m } = M,
+          cn = [...new Set(terms.map((t) => t.col))];
+        SIM = {
+          val: {},
+          cols: cn.map((c) => {
+            const ts = terms.filter((t) => t.col === c);
+            if (ts[0].kind === "num") {
+              const v = ts[0].vals,
+                st = stepOf(v);
+              return {
+                cn: c,
+                kind: "num",
+                t: ts[0],
+                lo: Math.min(...v),
+                hi: Math.max(...v),
+                st,
+                dec: decOf(st),
+              };
+            }
+            return {
+              cn: c,
+              kind: "cat",
+              ts,
+              levels: [ts[0].base, ...ts.map((t) => t.level)],
+            };
+          }),
+        };
+        $("#sl").innerHTML = SIM.cols
+          .map((c, i) =>
+            c.kind === "num"
+              ? `<div class="row"><label for="s${i}">${esc(lab(c.cn))}<small>rentang data ${f(c.lo, c.dec)} sampai ${f(c.hi, c.dec)}</small></label><output id="o${i}"></output><input type="range" id="s${i}" data-i="${i}" min="${c.lo}" max="${c.hi}" step="${c.st}"></div>`
+              : `<div class="row"><label>${esc(lab(c.cn))}</label><div class="segs">${c.levels.map((l, j) => `<label class="seg"><input type="radio" name="c${i}" data-i="${i}" value="${esc(l)}">${esc(l)}</label>`).join("")}</div></div>`,
+          )
+          .join("");
+        const yl = Math.min(...y),
+          yh = Math.max(...y),
+          st = stepOf(y);
+        const th = $("#thr");
+        th.min = yl;
+        th.max = yh;
+        th.step = st;
+        th.value = Math.round(mean(y) / st) * st;
+        SIM.dy = Math.max(decOf(st), yh - yl >= 20 ? 1 : yh - yl >= 2 ? 2 : 3);
+        SIM.bounded = y.every((v) => v >= 0 && v <= 100);
+        $("#sd").textContent = f(Math.sqrt(m.mse), 2);
+        $("#avg").textContent = f(mean(y), SIM.dy);
+        $("#yl").textContent = lab(M.yn);
+        put(null);
+      }
+      function put(row) {
+        SIM.cols.forEach((c, i) => {
+          if (c.kind === "num") {
+            const v = row == null ? mean(c.t.vals) : DS.cols[c.cn][row];
+            $("#s" + i).value = v;
+          } else {
+            const v = row == null ? c.levels[0] : DS.cols[c.cn][row],
+              l = c.levels.includes(v) ? v : c.levels[0];
+            document
+              .querySelectorAll(`[name=c${i}]`)
+              .forEach((r) => (r.checked = r.value === l));
+          }
+        });
+        simUpdate();
+      }
+      function simUpdate() {
+        const { terms, y, m } = M;
+        SIM.cols.forEach((c, i) => {
+          if (c.kind === "num") {
+            SIM.val[c.cn] = +$("#s" + i).value;
+            $("#o" + i).textContent = f(SIM.val[c.cn], c.dec);
+          } else {
+            const r = document.querySelector(`[name=c${i}]:checked`);
+            SIM.val[c.cn] = r ? r.value : c.levels[0];
+          }
+        });
+        const tv = (t) =>
+          t.kind === "num" ? SIM.val[t.col] : +(SIM.val[t.col] === t.level);
+        let yh = m.b[0];
+        terms.forEach((t, i) => (yh += m.b[i + 1] * tv(t)));
+        const thr = +$("#thr").value,
+          sdv = Math.sqrt(m.mse),
+          p = 1 - cdf((thr - yh) / sdv),
+          pc = Math.round(p * 100);
+        $("#ot").textContent = f(thr, SIM.dy);
+        $("#score").textContent = f(
+          SIM.bounded ? Math.max(0, Math.min(100, yh)) : yh,
+          SIM.dy,
+        );
+        $("#pct").textContent = pc + "%";
+        $("#xp").innerHTML = Array.from(
+          { length: 10 },
+          (_, i) =>
+            `<i><b style="width:${Math.max(0, Math.min(1, p * 10 - i)) * 100}%"></b></i>`,
+        ).join("");
+        $("#verdict").textContent =
+          pc >= 90
+            ? "Hampir pasti mencapai batas."
+            : pc >= 70
+              ? "Sangat mungkin mencapai batas."
+              : pc >= 50
+                ? "Peluang cukup besar, tapi belum aman."
+                : pc >= 30
+                  ? "Peluangnya kecil."
+                  : pc >= 10
+                    ? "Sulit mencapai batas dengan kondisi ini."
+                    : "Hampir pasti di bawah batas.";
+        const cs = SIM.cols
+            .map((c) => ({
+              n: c.cn,
+              c: sum(
+                terms.map((t, i) =>
+                  t.col === c.cn ? m.b[i + 1] * (tv(t) - mean(t.vals)) : 0,
+                ),
+              ),
+            }))
+            .sort((a, b) => Math.abs(b.c) - Math.abs(a.c)),
+          mx = Math.max(Math.abs(cs[0].c), sd(y) * 0.3);
+        $("#contrib").innerHTML = cs
+          .map(
+            (o) =>
+              `<li><span>${esc(short(lab(o.n), 14))}</span><div class="tr"><i class="${o.c >= 0 ? "up" : "dn"}" style="width:${(Math.abs(o.c) / mx) * 50}%"></i></div><em>${o.c >= 0 ? "+" : ""}${f(o.c, SIM.dy)}</em></li>`,
+          )
+          .join("");
+      }
+      $("#sl").oninput = simUpdate;
+      $("#sl").onchange = simUpdate;
+      $("#thr").oninput = simUpdate;
+      $("#pa").onclick = () => put(null);
+      $("#pb").onclick = () => put(M.idx[M.y.indexOf(Math.max(...M.y))]);
+      $("#pw").onclick = () => put(M.idx[M.y.indexOf(Math.min(...M.y))]);
+      /* ---------- jelajah ---------- */
+      const PAL = ["k0", "k1", "k2", "k3", "k4", "k5"];
+      function expInit() {
+        const nums = DS.info.filter((c) => c.type === "num"),
+          o = nums
+            .map(
+              (c) =>
+                `<option value="${esc(c.name)}">${esc(lab(c.name))}</option>`,
+            )
+            .join("");
+        $("#sx").innerHTML = o;
+        $("#sy2").innerHTML = o;
+        const nt = M.terms.filter((t) => t.kind === "num"),
+          pc = nt.map((t) => Math.abs(pcorr(t.vals, M.y)) || 0),
+          b = nt.length ? nt[pc.indexOf(Math.max(...pc))].col : nums[0].name;
+        $("#sx").value = b;
+        $("#sy2").value = CFG.y;
+        $("#sz").innerHTML = o;
+        {
+          const o2 = nums.filter((c) => c.name !== b && c.name !== CFG.y),
+            nz = nt.map((t) => t.col).filter((c) => c !== b),
+            pz = nz.map(
+              (c) => Math.abs(pcorr(DS.cols[c], DS.cols[CFG.y])) || 0,
+            );
+          $("#sz").value = nz.length
+            ? nz[pz.indexOf(Math.max(...pz))]
+            : (o2[0] || nums[0]).name;
+        }
+        $("#cg").innerHTML =
+          '<option value="">tidak diwarnai</option>' +
+          DS.info
+            .filter((c) => c.type === "cat")
+            .map(
+              (c) =>
+                `<option value="${esc(c.name)}">${esc(lab(c.name))}</option>`,
+            )
+            .join("");
+        let hn = [CFG.y, ...new Set(nt.map((t) => t.col))];
+        const cy = (n) => Math.abs(pcorr(DS.cols[n], DS.cols[CFG.y])) || 0;
+        if (hn.length > 10)
+          hn = [
+            CFG.y,
+            ...hn
+              .slice(1)
+              .sort((a, b) => cy(b) - cy(a))
+              .slice(0, 9),
+          ];
+        const n = hn.length;
+        let h =
+          `<div></div>` +
+          hn
+            .map(
+              (c) =>
+                `<div class="h" title="${esc(c)}">${esc(short(lab(c), 9))}</div>`,
+            )
+            .join("");
+        hn.forEach((r) => {
+          h += `<div class="l" title="${esc(r)}">${esc(short(lab(r), 12))}</div>`;
+          hn.forEach((c) => {
+            const v = pcorr(DS.cols[r], DS.cols[c]);
+            h += isNaN(v)
+              ? "<div>-</div>"
+              : `<div class="c" data-x="${esc(c)}" data-y="${esc(r)}" style="background:${v >= 0 ? "rgba(11,79,158," : "rgba(163,18,63,"}${(0.15 + Math.abs(v) * 0.75).toFixed(2)});color:${Math.abs(v) > 0.6 ? "#fff" : "inherit"}" title="${esc(c)} vs ${esc(r)}">${v.toFixed(2)}</div>`;
+          });
+        });
+        const hm = $("#hm");
+        hm.style.gridTemplateColumns = `104px repeat(${n},minmax(46px,1fr))`;
+        hm.style.minWidth = 104 + n * 50 + "px";
+        hm.innerHTML = h;
+        explore();
+      }
+      function explore() {
+        if ($("#v3").checked) {
+          explore3d();
+          return;
+        }
+        const xk = $("#sx").value,
+          yk = $("#sy2").value,
+          gk = $("#cg").value,
+          xs = [],
+          ys = [],
+          ix = [];
+        DS.cols[xk].forEach((v, i) => {
+          const w = DS.cols[yk][i];
+          if (!isNaN(v) && !isNaN(w)) {
+            xs.push(v);
+            ys.push(w);
+            ix.push(i);
+          }
+        });
+        if (xs.length < 3) {
+          $("#sp").innerHTML =
+            '<p class="sub">Data lengkap untuk pasangan ini terlalu sedikit.</p>';
+          $("#es").innerHTML = "";
+          return;
+        }
+        const mx = mean(xs),
+          my = mean(ys),
+          sl =
+            sum(xs.map((v, i) => (v - mx) * (ys[i] - my))) /
+            sum(xs.map((v) => (v - mx) ** 2)),
+          ic = my - sl * mx,
+          r = pcorr(xs, ys),
+          tx = ticks(Math.min(...xs), Math.max(...xs));
+        let cls = null,
+          lv = [];
+        if (gk) {
+          const cn = {};
+          ix.forEach(
+            (i) => (cn[DS.cols[gk][i]] = (cn[DS.cols[gk][i]] || 0) + 1),
+          );
+          lv = Object.keys(cn).sort((a, b) => cn[b] - cn[a]);
+          cls = ix.map(
+            (i) => PAL[Math.min(Math.max(lv.indexOf(DS.cols[gk][i]), 0), 5)],
+          );
+        }
+        $("#sp").innerHTML = scatter({
+          id: "c3",
+          xs,
+          ys,
+          xl: lab(xk),
+          yl: lab(yk),
+          cls,
+          tips: ix.map(
+            (g, i) =>
+              `${rowLab(g)}: ${lab(xk)} ${f(xs[i], 2)}, ${lab(yk)} ${f(ys[i], 2)}`,
+          ),
+          lines: $("#cl").checked
+            ? [[tx[0], sl * tx[0] + ic, tx.at(-1), sl * tx.at(-1) + ic, "ln"]]
+            : [],
+        });
+        $("#lg").innerHTML = lv
+          .map(
+            (l, i) =>
+              `<span><i class="${PAL[Math.min(i, 5)]}b"></i>${esc(l)}</span>`,
+          )
+          .join("");
+        const st =
+          Math.abs(r) >= 0.8
+            ? "sangat kuat"
+            : Math.abs(r) >= 0.6
+              ? "kuat"
+              : Math.abs(r) >= 0.4
+                ? "sedang"
+                : "lemah";
+        $("#es").innerHTML =
+          `<table><tr><th>Ringkasan</th><th>Nilai</th></tr><tr><td>Jumlah data</td><td>${xs.length}</td></tr><tr><td>Korelasi r</td><td>${r.toFixed(3)}</td></tr><tr><td>R² (dua variabel ini)</td><td>${(r * r).toFixed(3)}</td></tr><tr><td>Kemiringan</td><td>${f(sl, 4)}</td></tr><tr><td>Intersep</td><td>${f(ic, 3)}</td></tr></table><p class="sub" style="margin-top:10px">${xk === yk ? "Variabel yang sama." : `Hubungan ${st} dan ${r > 0 ? "positif" : "negatif"}. Tiap kenaikan 1 pada ${esc(lab(xk))}, rata-rata ${esc(lab(yk))} berubah ${f(sl, 3)}. Angka ini belum mengontrol faktor lain, makanya bisa berbeda dari koefisien di regresi berganda.`}</p>`;
+      }
+      ["#sx", "#sy2", "#sz", "#cg", "#cl"].forEach(
+        (s) => ($(s).onchange = explore),
+      );
+      ["#v2", "#v3"].forEach(
+        (s) =>
+          ($(s).onchange = () => {
+            const on = $("#v3").checked;
+            document
+              .querySelectorAll(".d3only")
+              .forEach((e) => (e.hidden = !on));
+            $("#clt").textContent = on ? "Bidang regresi" : "Garis regresi";
+            if (!on) {
+              V3.auto = false;
+              syncAuto();
+            }
+            explore();
+          }),
+      );
+      $("#sw").onclick = () => {
+        const a = $("#sx").value;
+        $("#sx").value = $("#sy2").value;
+        $("#sy2").value = a;
+        explore();
+      };
+      $("#hm").onclick = (e) => {
+        const c = e.target.closest(".c");
+        if (c) {
+          $("#sx").value = c.dataset.x;
+          $("#sy2").value = c.dataset.y;
+          explore();
+          $("#sp").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+      /* ---------- grafik 3D (bisa diputar) ---------- */
+      const V3 = {
+        yaw: -0.6,
+        pitch: 0.35,
+        zoom: 1,
+        auto: false,
+        raf: 0,
+        P: null,
+        d: null,
+        pl: null,
+        k: null,
+        sp: [],
+      };
+      const syncAuto = () => {
+        $("#ar").textContent = V3.auto ? "Berhenti memutar" : "Putar otomatis";
+        if (V3.auto && !V3.raf) V3.raf = requestAnimationFrame(loop);
+      };
+      function loop() {
+        if (!V3.auto || !$("#c3d")) {
+          V3.raf = 0;
+          V3.auto = false;
+          if ($("#ar")) $("#ar").textContent = "Putar otomatis";
+          return;
+        }
+        V3.yaw += 0.008;
+        render3d();
+        V3.raf = requestAnimationFrame(loop);
+      }
+      function explore3d() {
+        const xk = $("#sx").value,
+          yk = $("#sy2").value,
+          zk = $("#sz").value,
+          gk = $("#cg").value,
+          P = [];
+        DS.cols[xk].forEach((v, i) => {
+          const w = DS.cols[yk][i],
+            u = DS.cols[zk][i];
+          if (!isNaN(v) && !isNaN(w) && !isNaN(u))
+            P.push({ i, x: v, y: w, z: u });
+        });
+        if (P.length < 4) {
+          V3.P = null;
+          $("#sp").innerHTML =
+            '<p class="sub">Data lengkap untuk kombinasi tiga variabel ini terlalu sedikit.</p>';
+          $("#es").innerHTML = "";
+          $("#lg").innerHTML = "";
+          return;
+        }
+        let lv = [];
+        if (gk) {
+          const cn = {};
+          P.forEach(
+            (p) => (cn[DS.cols[gk][p.i]] = (cn[DS.cols[gk][p.i]] || 0) + 1),
+          );
+          lv = Object.keys(cn).sort((a, b) => cn[b] - cn[a]);
+        }
+        P.forEach((p) => {
+          p.c = gk
+            ? PAL[Math.min(Math.max(lv.indexOf(DS.cols[gk][p.i]), 0), 5)]
+            : "a";
+          p.t = `${rowLab(p.i)}: ${lab(xk)} ${f(p.x, 2)}, ${lab(yk)} ${f(p.y, 2)}, ${lab(zk)} ${f(p.z, 2)}`;
+        });
+        const dom = (a) => {
+            const t = ticks(Math.min(...a), Math.max(...a), 4);
+            return { lo: t[0], hi: t.at(-1), t };
+          },
+          X = P.map((p) => p.x),
+          Yv = P.map((p) => p.y),
+          Z = P.map((p) => p.z);
+        V3.P = P;
+        V3.k = { x: xk, y: yk, z: zk };
+        V3.d = { x: dom(X), y: dom(Yv), z: dom(Z) };
+        V3.pl = null;
+        try {
+          V3.pl = ols(Yv, [X, Z]);
+        } catch (e) {}
+        $("#sp").innerHTML =
+          `<canvas id="c3d" role="img" aria-label="Grafik 3D: ${esc(lab(xk))}, ${esc(lab(yk))}, ${esc(lab(zk))}"></canvas><p class="note">Geser untuk memutar, scroll atau tombol Zoom untuk memperbesar. Sumbu X ke kanan, Y ke atas, Z ke kedalaman.</p>`;
+        $("#lg").innerHTML = lv
+          .map(
+            (l, i) =>
+              `<span><i class="${PAL[Math.min(i, 5)]}b"></i>${esc(l)}</span>`,
+          )
+          .join("");
+        const cv = $("#c3d");
+        let drag = null;
+        cv.onpointerdown = (e) => {
+          drag = { x: e.clientX, y: e.clientY };
+          cv.setPointerCapture(e.pointerId);
+          V3.auto = false;
+          syncAuto();
+        };
+        cv.onpointerup = cv.onpointercancel = () => {
+          drag = null;
+        };
+        cv.onpointermove = (e) => {
+          if (drag) {
+            V3.yaw += (e.clientX - drag.x) * 0.01;
+            V3.pitch = Math.max(
+              -1.5,
+              Math.min(1.5, V3.pitch + (e.clientY - drag.y) * 0.01),
+            );
+            drag.x = e.clientX;
+            drag.y = e.clientY;
+            cv.dataset.t = "";
+            render3d();
+          } else {
+            const r = cv.getBoundingClientRect(),
+              mx = e.clientX - r.left,
+              my = e.clientY - r.top;
+            let hit = "";
+            for (let i = V3.sp.length - 1; i >= 0; i--) {
+              const s = V3.sp[i];
+              if ((s.x - mx) ** 2 + (s.y - my) ** 2 <= (s.r + 5) ** 2) {
+                hit = s.t;
+                break;
+              }
+            }
+            cv.dataset.t = hit;
+          }
+        };
+        cv.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            zoom3(e.deltaY < 0 ? 1.1 : 0.9);
+          },
+          { passive: false },
+        );
+        const nx = short(lab(xk), 12),
+          ny = short(lab(yk), 12),
+          nz = short(lab(zk), 12),
+          rxz = pcorr(X, Z);
+        $("#es").innerHTML =
+          `<table><tr><th>Ringkasan 3D</th><th>Nilai</th></tr><tr><td>Jumlah data</td><td>${P.length}</td></tr><tr><td>r ${esc(nx)} dan ${esc(ny)}</td><td>${f(pcorr(X, Yv), 3)}</td></tr><tr><td>r ${esc(nz)} dan ${esc(ny)}</td><td>${f(pcorr(Z, Yv), 3)}</td></tr><tr><td>r ${esc(nx)} dan ${esc(nz)}</td><td>${f(rxz, 3)}</td></tr>` +
+          (V3.pl
+            ? `<tr><td>R² bidang regresi</td><td>${V3.pl.r2.toFixed(3)}</td></tr><tr><td>Koefisien ${esc(nx)}</td><td>${f(V3.pl.b[1], 4)}</td></tr><tr><td>Koefisien ${esc(nz)}</td><td>${f(V3.pl.b[2], 4)}</td></tr><tr><td>Intersep</td><td>${f(V3.pl.b[0], 3)}</td></tr>`
+            : "") +
+          `</table>` +
+          (V3.pl
+            ? `<p class="sub" style="margin-top:10px">Bidang merah adalah regresi berganda ${esc(lab(yk))} dari ${esc(lab(xk))} dan ${esc(lab(zk))}. Tiap kenaikan 1 pada ${esc(lab(xk))}, rata-rata ${esc(lab(yk))} berubah ${f(V3.pl.b[1], 3)} dengan ${esc(lab(zk))} dianggap tetap.${Math.abs(rxz) > 0.8 ? " Kedua faktor saling berkaitan kuat, jadi bidangnya bisa kurang stabil." : ""}</p>`
+            : '<p class="sub" style="margin-top:10px">Bidang regresi tidak bisa dihitung untuk kombinasi ini (ada variabel yang sama atau kembar).</p>');
+        render3d();
+        if (document.fonts) document.fonts.ready.then(render3d);
+      }
+      function zoom3(k) {
+        V3.zoom = Math.max(0.5, Math.min(2.5, V3.zoom * k));
+        render3d();
+      }
+      function render3d() {
+        const cv = $("#c3d");
+        if (!cv || !V3.P) return;
+        const w = cv.clientWidth || 560,
+          h = Math.round(Math.min(440, w * 0.85)),
+          dp = window.devicePixelRatio || 1;
+        if (
+          cv.width !== Math.round(w * dp) ||
+          cv.height !== Math.round(h * dp)
+        ) {
+          cv.width = Math.round(w * dp);
+          cv.height = Math.round(h * dp);
+          cv.style.height = h + "px";
+        }
+        const g = cv.getContext("2d");
+        g.setTransform(dp, 0, 0, dp, 0, 0);
+        g.clearRect(0, 0, w, h);
+        const cs = getComputedStyle(document.documentElement),
+          C = (n) => cs.getPropertyValue(n).trim(),
+          ink = C("--ink"),
+          mute = C("--mute"),
+          line = C("--line"),
+          neg = C("--neg"),
+          COL = {
+            a: C("--acc"),
+            k0: C("--acc"),
+            k1: C("--g1"),
+            k2: C("--pos"),
+            k3: neg,
+            k4: "#8a63d2",
+            k5: "#8c8c8c",
+          };
+        const cy_ = Math.cos(V3.yaw),
+          sy_ = Math.sin(V3.yaw),
+          cp = Math.cos(V3.pitch),
+          sp = Math.sin(V3.pitch),
+          R = 0.26 * Math.min(h, w * 0.85) * V3.zoom,
+          cx = w / 2,
+          cy = h / 2 - 6;
+        const pr = (x, y, z) => {
+          const x1 = x * cy_ + z * sy_,
+            z1 = -x * sy_ + z * cy_,
+            y1 = y * cp - z1 * sp,
+            z2 = y * sp + z1 * cp,
+            s = 1 / (1 - 0.16 * z2);
+          return [cx + x1 * s * R, cy - y1 * s * R, z2, s];
+        };
+        const D = V3.d,
+          nm = (v, d) => ((v - d.lo) / (d.hi - d.lo || 1)) * 2 - 1,
+          ln = (a, b, col, wd, al) => {
+            g.beginPath();
+            g.moveTo(a[0], a[1]);
+            g.lineTo(b[0], b[1]);
+            g.strokeStyle = col;
+            g.globalAlpha = al;
+            g.lineWidth = wd;
+            g.stroke();
+            g.globalAlpha = 1;
+          };
+        D.x.t.forEach((v) => {
+          const n = nm(v, D.x);
+          ln(pr(n, -1, -1), pr(n, -1, 1), line, 1, 1);
+          ln(pr(n, -1, -1), pr(n, 1, -1), line, 1, 0.6);
+        });
+        D.z.t.forEach((v) => {
+          const n = nm(v, D.z);
+          ln(pr(-1, -1, n), pr(1, -1, n), line, 1, 1);
+          ln(pr(-1, -1, n), pr(-1, 1, n), line, 1, 0.6);
+        });
+        D.y.t.forEach((v) => {
+          const n = nm(v, D.y);
+          ln(pr(-1, n, -1), pr(1, n, -1), line, 1, 0.6);
+          ln(pr(-1, n, -1), pr(-1, n, 1), line, 1, 0.6);
+        });
+        ln(pr(-1, -1, 1), pr(1, -1, 1), ink, 2, 0.7);
+        ln(pr(1, -1, -1), pr(1, -1, 1), ink, 2, 0.7);
+        ln(pr(-1, -1, 1), pr(-1, 1, 1), ink, 2, 0.7);
+        if ($("#cl").checked && V3.pl) {
+          const b = V3.pl.b,
+            N = 8,
+            xv = (i) => D.x.lo + ((D.x.hi - D.x.lo) * i) / N,
+            zv = (i) => D.z.lo + ((D.z.hi - D.z.lo) * i) / N,
+            yp = (x, z) =>
+              Math.max(D.y.lo, Math.min(D.y.hi, b[0] + b[1] * x + b[2] * z)),
+            Q = (x, z) => pr(nm(x, D.x), nm(yp(x, z), D.y), nm(z, D.z));
+          g.strokeStyle = neg;
+          g.globalAlpha = 0.55;
+          g.lineWidth = 1.3;
+          for (let i = 0; i <= N; i++) {
+            g.beginPath();
+            for (let j = 0; j <= N; j++) {
+              const q = Q(xv(i), zv(j));
+              j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]);
+            }
+            g.stroke();
+            g.beginPath();
+            for (let j = 0; j <= N; j++) {
+              const q = Q(xv(j), zv(i));
+              j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]);
+            }
+            g.stroke();
+          }
+          g.globalAlpha = 1;
+        }
+        const pts = V3.P.map((p) => ({
+            p,
+            q: pr(nm(p.x, D.x), nm(p.y, D.y), nm(p.z, D.z)),
+            f: pr(nm(p.x, D.x), -1, nm(p.z, D.z)),
+          })).sort((a, b) => a.q[2] - b.q[2]),
+          pst = C("--ptstroke");
+        pts.forEach((o) => ln(o.q, o.f, mute, 1, 0.18));
+        V3.sp = [];
+        pts.forEach((o) => {
+          const r = 4.6 * Math.sqrt(V3.zoom) * o.q[3];
+          g.beginPath();
+          g.arc(o.q[0], o.q[1], r, 0, 6.2832);
+          g.fillStyle = COL[o.p.c] || COL.a;
+          g.globalAlpha = 0.88;
+          g.fill();
+          g.globalAlpha = 1;
+          g.strokeStyle = pst;
+          g.lineWidth = 1;
+          g.stroke();
+          V3.sp.push({ x: o.q[0], y: o.q[1], r, t: o.p.t });
+        });
+        const FN = "Monocraft,ui-monospace,monospace",
+          T = (s, q) => g.fillText(s, q[0], q[1]);
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillStyle = ink;
+        g.font = "12px " + FN;
+        T(short(lab(V3.k.x), 16), pr(0, -1.24, 1.24));
+        T(short(lab(V3.k.z), 16), pr(1.24, -1.24, 0));
+        T(short(lab(V3.k.y), 16), pr(-1.24, 1.18, 1.24));
+        g.fillStyle = mute;
+        g.font = "10px " + FN;
+        D.x.t.forEach((v) => T(tl(v), pr(nm(v, D.x), -1.08, 1.08)));
+        D.z.t.forEach((v) => T(tl(v), pr(1.08, -1.08, nm(v, D.z))));
+        D.y.t.forEach((v) => T(tl(v), pr(-1.08, nm(v, D.y), 1.08)));
+      }
+      addEventListener("resize", () => render3d());
+      matchMedia("(prefers-color-scheme:dark)").addEventListener("change", () =>
+        render3d(),
+      );
+      $("#ar").onclick = () => {
+        V3.auto = !V3.auto;
+        syncAuto();
+      };
+      $("#rs").onclick = () => {
+        V3.yaw = -0.6;
+        V3.pitch = 0.35;
+        V3.zoom = 1;
+        V3.auto = false;
+        syncAuto();
+        render3d();
+      };
+      $("#zi").onclick = () => zoom3(1.2);
+      $("#zo").onclick = () => zoom3(1 / 1.2);
+
+      const tip = $("#tip");
+      document.addEventListener("mousemove", (e) => {
+        const t = e.target.dataset && e.target.dataset.t;
+        if (t) {
+          tip.textContent = t;
+          tip.style.display = "block";
+          tip.style.left = Math.min(e.clientX + 14, innerWidth - 250) + "px";
+          tip.style.top = e.clientY + 14 + "px";
+        } else tip.style.display = "none";
+      });
+      loadTable(parseDelim(SAMPLE), "data_uji.pdf (data bawaan)");
+    </script>
+  </body>
+</html>
